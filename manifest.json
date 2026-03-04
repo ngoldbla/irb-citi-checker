@@ -11,7 +11,8 @@
   ],
   "host_permissions": [
     "*://kennesaw-irb.cayuse.com/*",
-    "*://kennesaw.app.cayuse.com/*"
+    "*://kennesaw.app.cayuse.com/*",
+    "*://kennesaw-irb.app.cayuse.com/*"
   ],
   "background": {
     "service_worker": "service-worker.js",
@@ -21,7 +22,8 @@
     {
       "matches": [
         "*://kennesaw-irb.cayuse.com/*",
-        "*://kennesaw.app.cayuse.com/*"
+        "*://kennesaw.app.cayuse.com/*",
+        "*://kennesaw-irb.app.cayuse.com/*"
       ],
       "js": ["content-script.js"],
       "run_at": "document_idle"

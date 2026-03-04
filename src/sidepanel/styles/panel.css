@@ -102,6 +102,17 @@ body {
   font-size: 14px;
 }
 
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.rescan-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0;
+}
+
 .icon-btn {
   display: inline-flex;
   align-items: center;

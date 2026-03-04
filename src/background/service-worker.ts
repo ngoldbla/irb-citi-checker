@@ -60,7 +60,7 @@ async function handleMessage(
 
 // ── Helpers ───────────────────────────────────────────────────
 
-const CAYUSE_DOMAINS = ['kennesaw-irb.cayuse.com', 'kennesaw.app.cayuse.com'];
+const CAYUSE_DOMAINS = ['kennesaw-irb.cayuse.com', 'kennesaw.app.cayuse.com', 'kennesaw-irb.app.cayuse.com'];
 
 function isCayuseTab(url: string | undefined): boolean {
   if (!url) return false;
@@ -73,10 +73,17 @@ function isCayuseTab(url: string | undefined): boolean {
 }
 
 async function ensureContentScript(tabId: number): Promise<void> {
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    files: ['content-script.js'],
-  });
+  // Check if content script is already active before injecting
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: 'PING' });
+    return; // Content script already active
+  } catch {
+    // Not active — inject it
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content-script.js'],
+    });
+  }
 }
 
 // ── Scan Handler ─────────────────────────────────────────────

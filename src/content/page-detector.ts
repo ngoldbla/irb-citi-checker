@@ -49,7 +49,7 @@ export function detectCayusePage(url: string): CayusePageType {
 /** Check if a URL belongs to the KSU Cayuse IRB instance */
 export function isCayuseUrl(url: string): boolean {
   const lower = url.toLowerCase();
-  return lower.includes('kennesaw-irb.cayuse.com') || lower.includes('kennesaw.app.cayuse.com');
+  return lower.includes('kennesaw-irb.cayuse.com') || lower.includes('kennesaw.app.cayuse.com') || lower.includes('kennesaw-irb.app.cayuse.com');
 }
 
 /** Extract the section number from a submission form URL */

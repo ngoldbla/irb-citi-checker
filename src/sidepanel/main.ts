@@ -71,8 +71,8 @@ function showError(message: string): void {
 
 // ── Event Handlers ───────────────────────────────────────────
 
-// Scan button
-$('btn-scan').addEventListener('click', async () => {
+// Shared scan handler (used by both Scan and Rescan buttons)
+async function handleScan(): Promise<void> {
   showLoading('Scanning Cayuse personnel...');
   try {
     const response = await sendMessage({ type: 'TRIGGER_SCAN' });
@@ -86,7 +86,13 @@ $('btn-scan').addEventListener('click', async () => {
   } finally {
     hideLoading();
   }
-});
+}
+
+// Scan button
+$('btn-scan').addEventListener('click', handleScan);
+
+// Rescan button
+$('btn-rescan').addEventListener('click', handleScan);
 
 // Generate notification button
 $('btn-generate').addEventListener('click', async () => {
