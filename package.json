@@ -1,0 +1,17 @@
+{
+  "name": "irb-citi-checker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension to verify CITI Human Subjects training compliance for KSU IRB submissions in Cayuse",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "typescript": "^5.7.0",
+    "vite": "^6.1.0"
+  }
+}
