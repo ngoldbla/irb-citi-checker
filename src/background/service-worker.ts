@@ -58,6 +58,27 @@ async function handleMessage(
   }
 }
 
+// ── Helpers ───────────────────────────────────────────────────
+
+const CAYUSE_DOMAINS = ['kennesaw-irb.cayuse.com', 'kennesaw.app.cayuse.com'];
+
+function isCayuseTab(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const hostname = new URL(url).hostname;
+    return CAYUSE_DOMAINS.some((d) => hostname === d);
+  } catch {
+    return false;
+  }
+}
+
+async function ensureContentScript(tabId: number): Promise<void> {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ['content-script.js'],
+  });
+}
+
 // ── Scan Handler ─────────────────────────────────────────────
 
 async function handleTriggerScan(): Promise<ExtensionMessage> {
@@ -68,8 +89,27 @@ async function handleTriggerScan(): Promise<ExtensionMessage> {
       return { type: 'SCAN_ERROR', error: 'No active tab found.' };
     }
 
+    // Validate tab URL is a Cayuse domain
+    if (!isCayuseTab(tab.url)) {
+      return {
+        type: 'SCAN_ERROR',
+        error: 'Please navigate to a Cayuse submission page first.',
+      };
+    }
+
+    // Ensure content script is injected (idempotent — re-injection just re-registers listeners)
+    await ensureContentScript(tab.id);
+
     // Send scrape request to content script
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_SCRAPE' });
+    let response: ExtensionMessage;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_SCRAPE' });
+    } catch {
+      return {
+        type: 'SCAN_ERROR',
+        error: 'Could not reach the Cayuse page. Please reload the page and try again.',
+      };
+    }
 
     if (response.type === 'SCRAPE_ERROR') {
       return { type: 'SCAN_ERROR', error: response.error };

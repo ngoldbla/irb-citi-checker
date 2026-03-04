@@ -389,11 +389,15 @@ function notifyPageType(): void {
       messagePageType = 'unknown';
   }
 
-  chrome.runtime.sendMessage({
-    type: 'PAGE_DETECTED',
-    pageType: messagePageType,
-    url,
-  });
+  try {
+    chrome.runtime.sendMessage({
+      type: 'PAGE_DETECTED',
+      pageType: messagePageType,
+      url,
+    });
+  } catch {
+    // Service worker may not be ready yet — safe to ignore
+  }
 }
 
 // Notify on initial load
