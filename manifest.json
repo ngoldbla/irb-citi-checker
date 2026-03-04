@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "IRB CITI Compliance Checker",
+  "version": "0.1.0",
+  "description": "Verify CITI Human Subjects training compliance for IRB submissions in Cayuse",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://kennesaw-irb.cayuse.com/*",
+    "*://kennesaw.app.cayuse.com/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://kennesaw-irb.cayuse.com/*",
+        "*://kennesaw.app.cayuse.com/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
+  "action": {
+    "default_title": "IRB CITI Checker",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  }
+}

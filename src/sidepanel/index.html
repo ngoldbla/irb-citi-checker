@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IRB CITI Checker</title>
+  <link rel="stylesheet" href="./styles/panel.css">
+</head>
+<body>
+  <div id="app">
+    <header class="panel-header">
+      <h1>IRB CITI Checker</h1>
+      <div class="header-actions">
+        <button id="btn-settings" class="icon-btn" title="Settings">⚙</button>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state">
+        <p>Navigate to a Cayuse submission and click <strong>Scan</strong> to check CITI compliance.</p>
+        <button id="btn-scan" class="btn btn-primary btn-lg">Scan Personnel</button>
+      </div>
+
+      <!-- Submission view (hidden until scan completes) -->
+      <div id="submission-view" class="hidden">
+        <div id="submission-header"></div>
+        <div id="personnel-list"></div>
+        <div id="deficiency-report"></div>
+        <div id="notification-section" class="hidden">
+          <button id="btn-generate" class="btn btn-secondary">Generate Notification</button>
+          <div id="notification-draft"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button id="btn-close-settings" class="icon-btn">✕</button>
+        </div>
+        <form id="settings-form">
+          <div class="form-group">
+            <label for="portkey-base-url">Portkey Base URL</label>
+            <input type="url" id="portkey-base-url" placeholder="https://api.portkey.ai/v1">
+          </div>
+          <div class="form-group">
+            <label for="portkey-api-key">Portkey API Key</label>
+            <input type="password" id="portkey-api-key" placeholder="pk-...">
+          </div>
+          <div class="form-group">
+            <label for="llm-model">Model</label>
+            <input type="text" id="llm-model" value="gpt-5.2" placeholder="gpt-5.2">
+          </div>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p id="loading-text">Scanning...</p>
+    </div>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
