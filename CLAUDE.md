@@ -21,6 +21,8 @@ When deficiencies are found, auto-generates a notification draft for the PI.
 - **Service worker** (`src/background/service-worker.ts`): Message router,
   compliance evaluation, LLM notification generation, storage.
 - **Side panel** (`src/sidepanel/`): UI rendering, user interactions.
+  - `components/scan-progress.ts` — scan progress bar component
+  - `components/notification-draft.ts` — notification draft, CTA prompt, generating state
 - **Navigator** (`src/content/cayuse-navigator.ts`): STUB for Return-to-PI
   workflow (pending SME consultation — see TODO block in file).
 
@@ -52,5 +54,7 @@ Navigate to a Cayuse submission form and use the side panel.
 1. User clicks "Scan" → `TRIGGER_SCAN` → service worker → `REQUEST_SCRAPE` → content script
 2. Content script scrapes, emits `SCAN_PROGRESS` per person (fire-and-forget broadcast)
 3. Content script returns `SCRAPE_RESULT` → service worker evaluates → `SCAN_COMPLETE` → side panel
-4. Side panel auto-triggers `GENERATE_NOTIFICATION` if deficiencies found
+4. If deficiencies found:
+   - Fresh scan → auto-triggers `GENERATE_NOTIFICATION`
+   - Panel reload → shows CTA prompt; user clicks to generate
 5. "Return to PI" sends `RETURN_TO_PI` → service worker → `REQUEST_NAVIGATE` → content script
