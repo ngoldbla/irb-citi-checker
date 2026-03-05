@@ -1,7 +1,8 @@
 import { SELECTORS } from './selectors';
 import { detectCayusePage, isCayuseUrl, isPersonnelSection } from './page-detector';
 import type { ScrapedPersonnel, ScrapedTraining, ScrapedSubmissionData } from '../types/cayuse';
-import type { ExtensionMessage } from '../types/messages';
+import type { ExtensionMessage, RequestNavigateMessage } from '../types/messages';
+import { handleNavigationRequest } from './cayuse-navigator';
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -354,87 +355,146 @@ function findViewButton(row: Element): { element: HTMLElement; strategy: string 
   return null;
 }
 
+/** Attempt to force-close any open modal using multiple strategies */
+async function forceCloseModal(): Promise<void> {
+  const closeSelectors = [
+    SELECTORS.training.closeButton,
+    '.modal.show .close',
+    '.modal .btn-close',
+    '.modal .close',
+    '.modal-dialog .close',
+    '.modal-header button',
+  ];
+
+  for (const sel of closeSelectors) {
+    const btn = document.querySelector(sel) as HTMLElement | null;
+    if (btn) {
+      console.log(`[IRB Checker] forceCloseModal: clicking ${sel}`);
+      btn.click();
+      await waitForElementRemoved(SELECTORS.training.modal);
+      await waitForElementRemoved('.modal.show');
+      await delay(MODAL_CYCLE_DELAY);
+      return;
+    }
+  }
+
+  // Fallback: dispatch Escape keydown
+  console.log('[IRB Checker] forceCloseModal: no close button found, dispatching Escape');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await delay(MODAL_CYCLE_DELAY * 2);
+}
+
 /**
  * Click "View" on a personnel row to open the training modal,
  * scrape the training records, then close the modal.
+ * Includes retry logic: up to 2 retries on failure.
  */
 async function scrapeTrainingsForRow(
   row: Element,
   personnelName: string,
 ): Promise<ScrapedTraining[]> {
-  // Find the "View" link/button using multiple strategies
-  const result = findViewButton(row);
+  const MAX_RETRIES = 2;
 
-  if (!result) {
-    console.warn(`[IRB Checker] No View button found for ${personnelName} — tried: trainingCell selector, "View" text match, last-cell clickable. Skipping training scrape.`);
-    return [];
-  }
-
-  const { element: viewButton, strategy } = result;
-
-  // Click the View button
-  viewButton.click();
-  console.log(`[IRB Checker] Clicked View button for ${personnelName} (found via ${strategy}), waiting for modal...`);
-
-  // Wait for the training modal to appear — try multiple selectors
-  const dialogSelectors = [
-    SELECTORS.training.dialog,         // .modal-dialog.training-finder
-    '.modal.fade.in .modal-dialog',    // Bootstrap modal with any dialog
-    '.modal.show .modal-dialog',       // Bootstrap 5 variant
-    '.modal-dialog',                   // any modal dialog
-  ];
-  let modal: Element | null = null;
-  for (const sel of dialogSelectors) {
-    modal = await waitForElement(sel, MODAL_TIMEOUT);
-    if (modal) {
-      console.log(`[IRB Checker] Modal opened for ${personnelName} (matched: ${sel})`);
-      break;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      console.log(`[IRB Checker] Retry ${attempt}/${MAX_RETRIES} for ${personnelName}`);
+      await forceCloseModal();
+      await delay(MODAL_CYCLE_DELAY * 2);
     }
-  }
-  if (!modal) {
-    console.warn(`[IRB Checker] Training modal did not open for ${personnelName} — tried: ${dialogSelectors.join(', ')}`);
-    return [];
+
+    // Find the "View" link/button using multiple strategies
+    const result = findViewButton(row);
+
+    if (!result) {
+      console.warn(`[IRB Checker] No View button found for ${personnelName} — tried: trainingCell selector, "View" text match, last-cell clickable. Skipping training scrape.`);
+      return [];
+    }
+
+    const { element: viewButton, strategy } = result;
+
+    // Click the View button
+    viewButton.click();
+    console.log(`[IRB Checker] Clicked View button for ${personnelName} (found via ${strategy}), waiting for modal...`);
+
+    // Wait for the training modal to appear — try multiple selectors
+    const dialogSelectors = [
+      SELECTORS.training.dialog,         // .modal-dialog.training-finder
+      '.modal.fade.in .modal-dialog',    // Bootstrap modal with any dialog
+      '.modal.show .modal-dialog',       // Bootstrap 5 variant
+      '.modal-dialog',                   // any modal dialog
+    ];
+    let modal: Element | null = null;
+    for (const sel of dialogSelectors) {
+      modal = await waitForElement(sel, MODAL_TIMEOUT);
+      if (modal) {
+        console.log(`[IRB Checker] Modal opened for ${personnelName} (matched: ${sel})`);
+        break;
+      }
+    }
+    if (!modal) {
+      console.warn(`[IRB Checker] Training modal did not open for ${personnelName} (attempt ${attempt + 1}) — tried: ${dialogSelectors.join(', ')}`);
+      if (attempt < MAX_RETRIES) continue;
+      return [];
+    }
+
+    // Wait for training data to actually load (AJAX), not just the modal shell
+    const dataStatus = await waitForTrainingData();
+    if (dataStatus === 'empty') {
+      console.log(`[IRB Checker] ${personnelName}: no training records in modal`);
+    } else if (dataStatus === 'timeout') {
+      console.warn(`[IRB Checker] ${personnelName}: training data did not load in time (attempt ${attempt + 1})`);
+      if (attempt < MAX_RETRIES) continue;
+    }
+
+    // Scrape training records from the modal
+    const trainings = scrapeTrainingModal();
+
+    // Tag each record with the person's name
+    for (const t of trainings) {
+      t.personnelName = personnelName;
+    }
+    console.log(`[IRB Checker] ${personnelName}: captured ${trainings.length} training record(s)`);
+
+    // Close the modal — try multiple selectors
+    const closeBtn = document.querySelector(SELECTORS.training.closeButton)
+      ?? document.querySelector('.modal.show .close')
+      ?? document.querySelector('.modal .btn-close')
+      ?? document.querySelector('.modal .close');
+    if (closeBtn) {
+      (closeBtn as HTMLElement).click();
+      await waitForElementRemoved(SELECTORS.training.modal);
+      await waitForElementRemoved('.modal.show');
+      await delay(MODAL_CYCLE_DELAY);
+    } else {
+      console.warn(`[IRB Checker] Could not find close button for modal after scraping ${personnelName}`);
+      await forceCloseModal();
+    }
+
+    return trainings;
   }
 
-  // Wait for training data to actually load (AJAX), not just the modal shell
-  const dataStatus = await waitForTrainingData();
-  if (dataStatus === 'empty') {
-    console.log(`[IRB Checker] ${personnelName}: no training records in modal`);
-  } else if (dataStatus === 'timeout') {
-    console.warn(`[IRB Checker] ${personnelName}: training data did not load in time`);
+  return [];
+}
+
+/** Fire-and-forget progress message to the sidepanel via service worker */
+function emitProgress(current: number, total: number, personnelName: string, phase: 'scanning_personnel' | 'opening_modal' | 'scraping_training' | 'closing_modal'): void {
+  try {
+    chrome.runtime.sendMessage({
+      type: 'SCAN_PROGRESS',
+      current,
+      total,
+      personnelName,
+      phase,
+    });
+  } catch {
+    // Service worker or sidepanel may not be listening — safe to ignore
   }
-
-  // Scrape training records from the modal
-  const trainings = scrapeTrainingModal();
-
-  // Tag each record with the person's name
-  for (const t of trainings) {
-    t.personnelName = personnelName;
-  }
-  console.log(`[IRB Checker] ${personnelName}: captured ${trainings.length} training record(s)`);
-
-  // Close the modal — try multiple selectors
-  const closeBtn = document.querySelector(SELECTORS.training.closeButton)
-    ?? document.querySelector('.modal.show .close')
-    ?? document.querySelector('.modal .btn-close')
-    ?? document.querySelector('.modal .close');
-  if (closeBtn) {
-    (closeBtn as HTMLElement).click();
-    // Wait for any modal variant to be removed
-    await waitForElementRemoved(SELECTORS.training.modal);
-    await waitForElementRemoved('.modal.show');
-    await delay(MODAL_CYCLE_DELAY);
-  } else {
-    console.warn(`[IRB Checker] Could not find close button for modal after scraping ${personnelName}`);
-    await delay(MODAL_CYCLE_DELAY);
-  }
-
-  return trainings;
 }
 
 /**
  * Iterate through all personnel rows and scrape training records for each.
  * This is sequential because each person's trainings require opening a modal.
+ * Emits SCAN_PROGRESS messages for real-time UI feedback.
  */
 async function scrapeAllTrainings(): Promise<ScrapedTraining[]> {
   const containers = document.querySelectorAll(SELECTORS.personnel.assignmentContainer);
@@ -442,6 +502,8 @@ async function scrapeAllTrainings(): Promise<ScrapedTraining[]> {
   const allTrainings: ScrapedTraining[] = [];
   const processedNames = new Set<string>();
 
+  // First pass: collect all { row, name } pairs to process
+  const toProcess: { row: Element; name: string }[] = [];
   for (const container of containers) {
     const role = extractRoleFromContainer(container);
     if (role === 'Primary Contact') continue;
@@ -450,12 +512,10 @@ async function scrapeAllTrainings(): Promise<ScrapedTraining[]> {
     for (const table of tables) {
       const rows = table.querySelectorAll('tbody tr');
       for (const row of rows) {
-        // Try e3-table-row-cell first, fall back to plain td
         let isData = isDataRow(row);
         let cells = row.querySelectorAll(SELECTORS.personnel.dataCell);
 
         if (!isData) {
-          // Fallback: try plain td cells
           const plainCells = row.querySelectorAll('td');
           if (plainCells.length >= 5 && textOf(plainCells[0])) {
             isData = true;
@@ -468,12 +528,24 @@ async function scrapeAllTrainings(): Promise<ScrapedTraining[]> {
         const name = textOf(cells[0]);
         if (!name || processedNames.has(name)) continue;
         processedNames.add(name);
-
-        console.log(`[IRB Checker] scrapeAllTrainings: opening training modal for "${name}"`);
-        const trainings = await scrapeTrainingsForRow(row, name);
-        allTrainings.push(...trainings);
+        toProcess.push({ row, name });
       }
     }
+  }
+
+  const total = toProcess.length;
+  console.log(`[IRB Checker] scrapeAllTrainings: ${total} person(s) to process`);
+
+  // Second pass: scrape each person with progress reporting
+  for (let i = 0; i < toProcess.length; i++) {
+    const { row, name } = toProcess[i];
+    const current = i + 1;
+
+    emitProgress(current, total, name, 'opening_modal');
+    console.log(`[IRB Checker] scrapeAllTrainings: [${current}/${total}] opening training modal for "${name}"`);
+
+    const trainings = await scrapeTrainingsForRow(row, name);
+    allTrainings.push(...trainings);
   }
 
   console.log(`[IRB Checker] scrapeAllTrainings: total ${allTrainings.length} training(s) collected for ${processedNames.size} person(s)`);
@@ -585,6 +657,21 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage | { type: string
         });
       });
     return true; // Keep message channel open for async response
+  }
+  if (message.type === 'REQUEST_NAVIGATE') {
+    const navMsg = message as RequestNavigateMessage;
+    handleNavigationRequest(navMsg.action, navMsg.submissionId, navMsg.comment)
+      .then((result) => {
+        sendResponse({ type: 'NAVIGATE_RESULT', success: result.success, error: result.error });
+      })
+      .catch((err) => {
+        sendResponse({
+          type: 'NAVIGATE_RESULT',
+          success: false,
+          error: err instanceof Error ? err.message : 'Navigation failed',
+        });
+      });
+    return true;
   }
 });
 

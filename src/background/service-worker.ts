@@ -19,8 +19,14 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
 // ── Message Hub ──────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
-  handleMessage(message, sender).then(sendResponse);
+chrome.runtime.onMessage.addListener((message: ExtensionMessage | { type: string }, sender, sendResponse) => {
+  // Fire-and-forget broadcasts — relay to sidepanel without response
+  if (message.type === 'SCAN_PROGRESS') {
+    chrome.runtime.sendMessage(message).catch(() => {});
+    return;
+  }
+
+  handleMessage(message as ExtensionMessage, sender).then(sendResponse);
   return true; // async response
 });
 
@@ -43,6 +49,9 @@ async function handleMessage(
 
     case 'SAVE_SETTINGS':
       return handleSaveSettings(message.settings);
+
+    case 'RETURN_TO_PI':
+      return handleReturnToPi(message.submissionId, message.comment);
 
     case 'PAGE_DETECTED':
       // Content script notifying about page type - no response needed
@@ -149,6 +158,49 @@ async function handleTriggerScan(): Promise<ExtensionMessage> {
     return {
       type: 'SCAN_ERROR',
       error: err instanceof Error ? err.message : 'Scan failed unexpectedly.',
+    };
+  }
+}
+
+// ── Return to PI Handler ─────────────────────────────────
+
+async function handleReturnToPi(
+  submissionId: string,
+  comment: string,
+): Promise<ExtensionMessage> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      return { type: 'NAVIGATE_STATUS', success: false, error: 'No active tab found.' };
+    }
+
+    if (!isCayuseTab(tab.url)) {
+      return {
+        type: 'NAVIGATE_STATUS',
+        success: false,
+        error: 'Please navigate to a Cayuse page first.',
+      };
+    }
+
+    await ensureContentScript(tab.id);
+
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      type: 'REQUEST_NAVIGATE',
+      action: 'return_to_pi',
+      submissionId,
+      comment,
+    });
+
+    return {
+      type: 'NAVIGATE_STATUS',
+      success: response.success ?? false,
+      error: response.error,
+    };
+  } catch (err) {
+    return {
+      type: 'NAVIGATE_STATUS',
+      success: false,
+      error: err instanceof Error ? err.message : 'Return to PI failed.',
     };
   }
 }
