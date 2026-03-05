@@ -1,16 +1,55 @@
+let draftTextarea: HTMLTextAreaElement | null = null;
+
 export function renderNotificationDraft(container: HTMLElement, draft: string): void {
   container.innerHTML = `
-    <div class="notification-draft">${escapeHtml(draft)}</div>
+    <div class="draft-header">
+      <span class="draft-label">Notification Draft</span>
+      <button class="btn-link" id="btn-regenerate">Regenerate</button>
+    </div>
+    <textarea class="notification-draft-textarea" id="draft-textarea" rows="12">${escapeHtml(draft)}</textarea>
     <div class="notification-actions">
-      <button class="btn btn-primary" id="btn-copy-draft">Copy to Clipboard</button>
+      <button class="btn btn-secondary btn-sm" id="btn-copy-draft">Copy to Clipboard</button>
+      <button class="btn btn-primary btn-sm" id="btn-return-to-pi">Return to PI</button>
     </div>
   `;
 
+  draftTextarea = container.querySelector('#draft-textarea') as HTMLTextAreaElement;
+
   container.querySelector('#btn-copy-draft')?.addEventListener('click', () => {
-    navigator.clipboard.writeText(draft).then(() => {
-      showToast('Notification copied to clipboard');
-    });
+    const text = getCurrentDraftText();
+    if (text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Notification copied to clipboard');
+      });
+    }
   });
+}
+
+/** Show a CTA prompt to generate a notification (used on panel reload, not fresh scan) */
+export function renderNotificationPrompt(container: HTMLElement, onGenerate: () => void): void {
+  container.innerHTML = `
+    <div class="notification-prompt">
+      <p class="notification-prompt-text">Deficiencies found. Draft a notification for the PI?</p>
+      <button class="btn btn-primary btn-sm" id="btn-generate-cta">Generate Notification</button>
+    </div>
+  `;
+  container.querySelector('#btn-generate-cta')?.addEventListener('click', onGenerate);
+}
+
+/** Show a generating status message in the draft area */
+export function renderDraftGenerating(container: HTMLElement): void {
+  container.innerHTML = `
+    <div class="draft-generating">
+      <div class="draft-generating-spinner"></div>
+      <span>Generating notification draft...</span>
+    </div>
+  `;
+  draftTextarea = null;
+}
+
+/** Get the current text from the draft textarea (preserving user edits) */
+export function getCurrentDraftText(): string {
+  return draftTextarea?.value ?? '';
 }
 
 function showToast(message: string): void {

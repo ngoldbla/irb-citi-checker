@@ -51,6 +51,49 @@ export interface SaveSettingsMessage {
   settings: ExtensionSettings;
 }
 
+// ── Content Script → Sidepanel (via service worker relay) ────
+
+export interface ScanProgressMessage {
+  type: 'SCAN_PROGRESS';
+  current: number;       // 1-based index
+  total: number;
+  personnelName: string;
+  phase: 'scanning_personnel' | 'opening_modal' | 'scraping_training' | 'closing_modal';
+}
+
+// ── Sidepanel → Service Worker (navigation) ─────────────────
+
+export interface ReturnToPiMessage {
+  type: 'RETURN_TO_PI';
+  submissionId: string;
+  comment: string;
+}
+
+// ── Service Worker → Content Script (navigation) ────────────
+
+export interface RequestNavigateMessage {
+  type: 'REQUEST_NAVIGATE';
+  action: 'return_to_pi';
+  submissionId: string;
+  comment: string;
+}
+
+// ── Content Script → Service Worker (navigation result) ─────
+
+export interface NavigateResultMessage {
+  type: 'NAVIGATE_RESULT';
+  success: boolean;
+  error?: string;
+}
+
+// ── Service Worker → Sidepanel (navigation status) ──────────
+
+export interface NavigateStatusMessage {
+  type: 'NAVIGATE_STATUS';
+  success: boolean;
+  error?: string;
+}
+
 // ── Service Worker → Sidepanel ───────────────────────────────
 
 export interface ScanCompleteMessage {
@@ -95,17 +138,21 @@ export interface EvaluationUpdateMessage {
 export type ContentToBackgroundMessage =
   | ScrapeResultMessage
   | ScrapeErrorMessage
-  | PageDetectedMessage;
+  | PageDetectedMessage
+  | ScanProgressMessage
+  | NavigateResultMessage;
 
 export type BackgroundToContentMessage =
-  | RequestScrapeMessage;
+  | RequestScrapeMessage
+  | RequestNavigateMessage;
 
 export type SidepanelToBackgroundMessage =
   | TriggerScanMessage
   | GenerateNotificationMessage
   | GetSubmissionMessage
   | GetSettingsMessage
-  | SaveSettingsMessage;
+  | SaveSettingsMessage
+  | ReturnToPiMessage;
 
 export type BackgroundToSidepanelMessage =
   | ScanCompleteMessage
@@ -114,7 +161,9 @@ export type BackgroundToSidepanelMessage =
   | NotificationErrorMessage
   | SettingsResponseMessage
   | SubmissionResponseMessage
-  | EvaluationUpdateMessage;
+  | EvaluationUpdateMessage
+  | ScanProgressMessage
+  | NavigateStatusMessage;
 
 export type ExtensionMessage =
   | ContentToBackgroundMessage

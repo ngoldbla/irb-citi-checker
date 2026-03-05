@@ -3,7 +3,9 @@ import type { Submission, ExtensionSettings } from '../types/models';
 import { renderSubmissionHeader } from './components/submission-header';
 import { renderPersonnelList } from './components/personnel-list';
 import { renderDeficiencyReport } from './components/deficiency-report';
-import { renderNotificationDraft } from './components/notification-draft';
+import { renderNotificationDraft, renderDraftGenerating, renderNotificationPrompt, getCurrentDraftText } from './components/notification-draft';
+import { renderScanProgress } from './components/scan-progress';
+import type { ScanProgressMessage, NavigateStatusMessage } from '../types/messages';
 
 // ── DOM Elements ─────────────────────────────────────────────
 
@@ -18,6 +20,8 @@ const notificationSection = $('notification-section');
 const notificationDraft = $('notification-draft');
 const loading = $('loading');
 const loadingText = $('loading-text');
+const scanProgress = $('scan-progress');
+const spinner = loading.querySelector('.spinner') as HTMLElement;
 const settingsModal = $('settings-modal');
 
 // ── State ────────────────────────────────────────────────────
@@ -34,14 +38,18 @@ function sendMessage(message: ExtensionMessage): Promise<ExtensionMessage> {
 
 function showLoading(text: string): void {
   loadingText.textContent = text;
+  spinner.classList.remove('hidden');
+  loadingText.classList.remove('hidden');
+  scanProgress.classList.add('hidden');
   loading.classList.remove('hidden');
 }
 
 function hideLoading(): void {
   loading.classList.add('hidden');
+  scanProgress.classList.add('hidden');
 }
 
-function showSubmission(submission: Submission): void {
+function showSubmission(submission: Submission, autoGenerate = false): void {
   currentSubmission = submission;
   emptyState.classList.add('hidden');
   submissionView.classList.remove('hidden');
@@ -50,23 +58,39 @@ function showSubmission(submission: Submission): void {
   renderPersonnelList(personnelList, submission.personnel);
   renderDeficiencyReport(deficiencyReport, submission);
 
-  // Show notification button only if there are deficiencies
   if (!submission.overallCompliant) {
     notificationSection.classList.remove('hidden');
+    notificationDraft.innerHTML = '';
+    if (autoGenerate) {
+      autoGenerateNotification(submission);
+    } else {
+      // Show a CTA prompt instead of auto-firing the LLM
+      renderNotificationPrompt(notificationDraft, () => {
+        if (currentSubmission) autoGenerateNotification(currentSubmission);
+      });
+    }
   } else {
     notificationSection.classList.add('hidden');
+    notificationDraft.innerHTML = '';
   }
-
-  // Clear any previous draft
-  notificationDraft.innerHTML = '';
 }
 
 function showError(message: string): void {
   const toast = document.createElement('div');
-  toast.className = 'toast';
+  toast.className = 'toast toast-error';
   toast.textContent = message;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 5000);
+}
+
+function showToast(message: string): void {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 // ── Event Handlers ───────────────────────────────────────────
@@ -77,7 +101,7 @@ async function handleScan(): Promise<void> {
   try {
     const response = await sendMessage({ type: 'TRIGGER_SCAN' });
     if (response.type === 'SCAN_COMPLETE') {
-      showSubmission(response.submission);
+      showSubmission(response.submission, true);
     } else if (response.type === 'SCAN_ERROR') {
       showError(response.error);
     }
@@ -94,27 +118,65 @@ $('btn-scan').addEventListener('click', handleScan);
 // Rescan button
 $('btn-rescan').addEventListener('click', handleScan);
 
-// Generate notification button
-$('btn-generate').addEventListener('click', async () => {
-  if (!currentSubmission) return;
-
-  showLoading('Generating notification draft...');
+// Auto-generate notification when deficiencies are found
+async function autoGenerateNotification(submission: Submission): Promise<void> {
+  renderDraftGenerating(notificationDraft);
   try {
     const response = await sendMessage({
       type: 'GENERATE_NOTIFICATION',
-      submissionId: currentSubmission.id,
+      submissionId: submission.id,
     });
     if (response.type === 'NOTIFICATION_DRAFT') {
       renderNotificationDraft(notificationDraft, response.draft);
+      bindDraftButtons();
     } else if (response.type === 'NOTIFICATION_ERROR') {
       showError(response.error);
+      notificationDraft.innerHTML = '';
     }
   } catch (err) {
     showError(err instanceof Error ? err.message : 'Failed to generate notification');
-  } finally {
-    hideLoading();
+    notificationDraft.innerHTML = '';
   }
-});
+}
+
+// Bind event listeners for buttons inside the draft component
+function bindDraftButtons(): void {
+  // Regenerate button
+  document.getElementById('btn-regenerate')?.addEventListener('click', () => {
+    if (currentSubmission) autoGenerateNotification(currentSubmission);
+  });
+
+  // Return to PI button
+  document.getElementById('btn-return-to-pi')?.addEventListener('click', async () => {
+    if (!currentSubmission) return;
+    const comment = getCurrentDraftText();
+    if (!comment) {
+      showError('No draft text to send');
+      return;
+    }
+    try {
+      const response = await sendMessage({
+        type: 'RETURN_TO_PI',
+        submissionId: currentSubmission.id,
+        comment,
+      });
+      if (response.type === 'NAVIGATE_STATUS') {
+        if (response.success) {
+          showToast('Submission returned to PI');
+        } else {
+          showError(response.error ?? 'Return to PI failed');
+          // Fallback: offer clipboard copy
+          navigator.clipboard.writeText(comment).then(() => {
+            showToast('Draft copied to clipboard as fallback');
+          });
+        }
+      }
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Return to PI failed');
+    }
+  });
+}
+
 
 // Settings modal
 $('btn-settings').addEventListener('click', async () => {
@@ -152,6 +214,27 @@ function populateSettings(settings: ExtensionSettings): void {
   ($<HTMLInputElement>('portkey-api-key')).value = settings.portkeyApiKey;
   ($<HTMLInputElement>('llm-model')).value = settings.llmModel;
 }
+
+// ── Broadcast Listeners ──────────────────────────────────
+
+chrome.runtime.onMessage.addListener((message: { type: string } & Record<string, unknown>) => {
+  if (message.type === 'SCAN_PROGRESS') {
+    const msg = message as unknown as ScanProgressMessage;
+    // Replace spinner with progress — progress becomes the main visual
+    spinner.classList.add('hidden');
+    loadingText.classList.add('hidden');
+    scanProgress.classList.remove('hidden');
+    renderScanProgress(scanProgress, msg);
+  }
+  if (message.type === 'NAVIGATE_STATUS') {
+    const msg = message as unknown as NavigateStatusMessage;
+    if (msg.success) {
+      showToast('Submission returned to PI successfully');
+    } else {
+      showError(msg.error ?? 'Navigation failed');
+    }
+  }
+});
 
 // ── Init ─────────────────────────────────────────────────────
 

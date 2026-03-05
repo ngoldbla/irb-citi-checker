@@ -47,6 +47,33 @@ function buildTrainingRecords(
   });
 }
 
+/*
+ * ┌──────────────────────────────────────────────────────────────┐
+ * │ DORMANT COMPLIANCE RULES — DO NOT REMOVE THESE RULES        │
+ * │                                                              │
+ * │ Rules 4 (email_mismatch) and 3 (external_institution_no_pdf)│
+ * │ can never currently trigger for the following reasons:       │
+ * │                                                              │
+ * │ • Rule 4 (Email Mismatch): Requires `registeredEmail` from  │
+ * │   CITI training records. The Cayuse training modal does NOT  │
+ * │   display the CITI registered email. In cayuse-scraper.ts,  │
+ * │   `registeredEmail` is always set to `undefined` (line ~318)│
+ * │   so `citiEmail` is always empty and the mismatch check     │
+ * │   never passes.                                             │
+ * │                                                              │
+ * │ • Rule 3 (External Without PDF): Requires `hasPdfAttachment`│
+ * │   from scraped training data. The Cayuse training modal does │
+ * │   NOT show PDF attachment status. In cayuse-scraper.ts,     │
+ * │   `hasPdfAttachment` is always set to `false` (line ~319),  │
+ * │   so every external person with training triggers this rule. │
+ * │   This is currently the EXPECTED behavior — external         │
+ * │   personnel should be flagged to attach their PDF.          │
+ * │                                                              │
+ * │ These rules are intentionally kept for future data sources   │
+ * │ (e.g., CITI API integration, enhanced Cayuse scraping).     │
+ * └──────────────────────────────────────────────────────────────┘
+ */
+
 /** Evaluate CITI compliance for a single person */
 function evaluatePerson(
   person: ScrapedPersonnel,
