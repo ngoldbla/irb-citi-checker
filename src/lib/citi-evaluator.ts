@@ -94,17 +94,17 @@ function evaluatePerson(
       deficiencies.push({
         type: 'external_institution_no_pdf',
         description: `No CITI training record found for ${person.name}. As non-KSU personnel, a PDF of their CITI certificate must be attached in Cayuse.`,
-        recommendation: `Request that ${person.name} provide a PDF copy of their current CITI Human Subjects training certificate to attach in Cayuse.`,
+        recommendation: `Request that ${person.name} provide a PDF copy of their current CITI Human Subjects Research training certificate to attach in Cayuse.`,
       });
       return { overallStatus: 'external', trainings: [], deficiencies };
     }
 
     deficiencies.push({
       type: 'no_training_found',
-      description: `No CITI Human Subjects training record found for ${person.name} in Cayuse.`,
+      description: `No CITI Human Subjects Research training record found for ${person.name} in Cayuse.`,
       recommendation: isKsu
-        ? `${person.name} must complete CITI Human Subjects training and register with their KSU email address. Training typically takes 4-6 hours.`
-        : `${person.name} must provide proof of current CITI Human Subjects training.`,
+        ? `${person.name} must complete CITI Human Subjects Research training.`
+        : `${person.name} must provide proof of current CITI Human Subjects Research training.`,
     });
     return { overallStatus: 'missing', trainings: [], deficiencies };
   }
@@ -119,7 +119,7 @@ function evaluatePerson(
     deficiencies.push({
       type: 'training_pending_sync',
       description: `CITI training for ${person.name} was completed today. The nightly sync between CITI and Cayuse has not yet run.`,
-      recommendation: `Training should appear in Cayuse by tomorrow after the nightly sync. If it does not appear, verify that ${person.name}'s CITI email matches their Cayuse email.`,
+      recommendation: `Training should appear in Cayuse by tomorrow after the nightly sync. If it does not appear, ${person.name} should provide a copy of their CITI completion certificate.`,
     });
     return { overallStatus: 'pending_sync', trainings: trainingRecords, deficiencies };
   }
@@ -128,7 +128,7 @@ function evaluatePerson(
   if (currentTrainings.length === 0 && expiredTrainings.length > 0) {
     deficiencies.push({
       type: 'training_expired',
-      description: `CITI Human Subjects training for ${person.name} has expired. Training must be current (within 3 years).`,
+      description: `CITI Human Subjects Research training for ${person.name} has expired. Training must be current (within 3 years).`,
       recommendation: `${person.name} must complete CITI refresher training. Their most recent training expired on ${expiredTrainings[0].expirationDate}.`,
     });
     return { overallStatus: 'expired', trainings: trainingRecords, deficiencies };
