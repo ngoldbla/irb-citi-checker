@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ngoldbla/irb-in-chrome/security/policy
+    about: Please report security issues privately by following our Security policy. Do not open a public issue for security vulnerabilities.

@@ -3,14 +3,14 @@ let draftTextarea: HTMLTextAreaElement | null = null;
 export function renderNotificationDraft(container: HTMLElement, draft: string): void {
   container.innerHTML = `
     <div class="draft-header">
-      <span class="draft-label">Notification Draft</span>
+      <span class="draft-label">PI Notification</span>
       <button class="btn-link" id="btn-regenerate">Regenerate</button>
     </div>
-    <textarea class="notification-draft-textarea" id="draft-textarea" rows="12">${escapeHtml(draft)}</textarea>
+    <textarea class="notification-draft-textarea" id="draft-textarea" rows="14">${escapeHtml(draft)}</textarea>
     <div class="notification-actions">
-      <button class="btn btn-secondary btn-sm" id="btn-copy-draft">Copy to Clipboard</button>
-      <button class="btn btn-primary btn-sm" id="btn-return-to-pi">Return to PI</button>
+      <button class="btn btn-primary btn-sm" id="btn-copy-draft">Copy message</button>
     </div>
+    <p class="draft-hint">Edit as needed, then paste into Cayuse's &ldquo;Missing information or materials&rdquo; field or an email to the PI.</p>
   `;
 
   draftTextarea = container.querySelector('#draft-textarea') as HTMLTextAreaElement;

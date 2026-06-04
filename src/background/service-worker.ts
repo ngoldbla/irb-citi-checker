@@ -1,8 +1,8 @@
 import type { ExtensionMessage } from '../types/messages';
-import type { Submission } from '../types/models';
+import type { ExtensionSettings, Submission } from '../types/models';
 import { evaluateSubmission, isSubmissionCompliant } from '../lib/citi-evaluator';
-import { chatCompletion } from '../lib/llm-client';
-import { buildNotificationPrompt } from '../lib/notification-templates';
+import { resolveInstitution } from '../lib/institution';
+import { renderNotification, DEFAULT_NOTIFICATION_TEMPLATE } from '../lib/notification-renderer';
 import { saveSubmission, getCurrentSubmission, getSettings, saveSettings } from '../lib/storage';
 
 // ── Sidepanel Setup ──────────────────────────────────────────
@@ -69,15 +69,28 @@ async function handleMessage(
 
 // ── Helpers ───────────────────────────────────────────────────
 
-const CAYUSE_DOMAINS = ['kennesaw-irb.cayuse.com', 'kennesaw.app.cayuse.com', 'kennesaw-irb.app.cayuse.com'];
-
+/**
+ * Cayuse is a single SaaS vendor: every institution's tenant lives under
+ * *.cayuse.com (e.g. yourschool-irb.cayuse.com, yourschool.app.cayuse.com).
+ * A hostname-suffix check makes the extension work at any institution with no
+ * per-site configuration — matching the broad host permission in manifest.json.
+ */
 function isCayuseTab(url: string | undefined): boolean {
   if (!url) return false;
   try {
-    const hostname = new URL(url).hostname;
-    return CAYUSE_DOMAINS.some((d) => hostname === d);
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname === 'cayuse.com' || hostname.endsWith('.cayuse.com');
   } catch {
     return false;
+  }
+}
+
+function safeHostname(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return undefined;
   }
 }
 
@@ -137,8 +150,16 @@ async function handleTriggerScan(): Promise<ExtensionMessage> {
 
     const scrapedData = response.data;
 
+    // Resolve the home institution: an explicit Settings override wins, otherwise
+    // auto-detect from the Cayuse hostname (e.g. "yourschool-irb.cayuse.com").
+    const settings = await getSettings();
+    const institution = resolveInstitution(safeHostname(tab.url), {
+      name: settings.institutionName,
+      emailDomains: settings.institutionEmailDomains,
+    });
+
     // Evaluate compliance
-    const personnel = evaluateSubmission(scrapedData.personnel, scrapedData.trainings);
+    const personnel = evaluateSubmission(scrapedData.personnel, scrapedData.trainings, institution);
     const overallCompliant = isSubmissionCompliant(personnel);
 
     const submission: Submission = {
@@ -146,6 +167,7 @@ async function handleTriggerScan(): Promise<ExtensionMessage> {
       title: scrapedData.submissionTitle || 'Untitled Submission',
       protocolNumber: scrapedData.protocolNumber,
       scannedAt: new Date().toISOString(),
+      institutionName: institution.name,
       personnel,
       overallCompliant,
     };
@@ -218,22 +240,11 @@ async function handleGenerateNotification(
     }
 
     const settings = await getSettings();
-    if (!settings.portkeyApiKey || !settings.portkeyBaseUrl) {
-      return {
-        type: 'NOTIFICATION_ERROR',
-        error: 'LLM API not configured. Please set your Portkey API key and base URL in Settings.',
-      };
-    }
+    const template = settings.notificationTemplate?.trim()
+      ? settings.notificationTemplate
+      : DEFAULT_NOTIFICATION_TEMPLATE;
 
-    const { system, user } = buildNotificationPrompt(submission, personnelNames);
-
-    const draft = await chatCompletion(
-      [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      settings
-    );
+    const draft = renderNotification(submission, template, personnelNames);
 
     return { type: 'NOTIFICATION_DRAFT', draft, submissionId };
   } catch (err) {
@@ -257,7 +268,7 @@ async function handleGetSettings(): Promise<ExtensionMessage> {
 }
 
 async function handleSaveSettings(
-  settings: { portkeyApiKey: string; portkeyBaseUrl: string; llmModel: string }
+  settings: ExtensionSettings
 ): Promise<ExtensionMessage> {
   await saveSettings(settings);
   return { type: 'SETTINGS_RESPONSE', settings };

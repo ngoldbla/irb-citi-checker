@@ -1,21 +1,7 @@
 import type { PersonnelRecord, CitiTraining, CitiStatus, Deficiency } from '../types/models';
 import type { ScrapedPersonnel, ScrapedTraining } from '../types/cayuse';
 import { calculateExpirationDate, isTrainingExpired, isCompletedToday } from './date-utils';
-
-const KSU_EMAIL_DOMAINS = ['kennesaw.edu', 'students.kennesaw.edu'];
-
-/** Determine if an email belongs to KSU */
-function isKsuEmail(email: string): boolean {
-  const domain = email.split('@')[1]?.toLowerCase();
-  return KSU_EMAIL_DOMAINS.some(d => domain === d);
-}
-
-/** Determine if a person is KSU personnel based on institution or email */
-function determineIsKsu(person: ScrapedPersonnel): boolean {
-  if (person.institution?.toLowerCase().includes('kennesaw')) return true;
-  if (person.email && isKsuEmail(person.email)) return true;
-  return false;
-}
+import { resolveInstitution, isHomeInstitution, isHomeEmail, type ResolvedInstitution } from './institution';
 
 /** Normalize a role string to the PersonnelRecord role enum */
 function normalizeRole(rawRole: string): PersonnelRecord['role'] {
@@ -78,7 +64,8 @@ function buildTrainingRecords(
 function evaluatePerson(
   person: ScrapedPersonnel,
   trainings: ScrapedTraining[],
-  isKsu: boolean
+  isHome: boolean,
+  inst: ResolvedInstitution
 ): CitiStatus {
   const trainingRecords = buildTrainingRecords(person.name, trainings);
   const deficiencies: Deficiency[] = [];
@@ -90,10 +77,10 @@ function evaluatePerson(
       t.personnelName.toLowerCase().trim() === person.name.toLowerCase().trim()
     );
 
-    if (!isKsu && matchedScraped.length === 0) {
+    if (!isHome && matchedScraped.length === 0) {
       deficiencies.push({
         type: 'external_institution_no_pdf',
-        description: `No CITI training record found for ${person.name}. As non-KSU personnel, a PDF of their CITI certificate must be attached in Cayuse.`,
+        description: `No CITI training record found for ${person.name}. As personnel external to ${inst.name}, a PDF of their CITI certificate must be attached in Cayuse.`,
         recommendation: `Request that ${person.name} provide a PDF copy of their current CITI Human Subjects Research training certificate to attach in Cayuse.`,
       });
       return { overallStatus: 'external', trainings: [], deficiencies };
@@ -102,7 +89,7 @@ function evaluatePerson(
     deficiencies.push({
       type: 'no_training_found',
       description: `No CITI Human Subjects Research training record found for ${person.name} in Cayuse.`,
-      recommendation: isKsu
+      recommendation: isHome
         ? `${person.name} must complete CITI Human Subjects Research training.`
         : `${person.name} must provide proof of current CITI Human Subjects Research training.`,
     });
@@ -134,25 +121,25 @@ function evaluatePerson(
     return { overallStatus: 'expired', trainings: trainingRecords, deficiencies };
   }
 
-  // Rule 4: Email mismatch for KSU personnel
-  if (isKsu && person.email) {
-    const hasKsuEmailInCiti = currentTrainings.some(t =>
-      t.registeredEmail && isKsuEmail(t.registeredEmail)
+  // Rule 4: Email mismatch for home-institution personnel
+  if (isHome && person.email) {
+    const hasHomeEmailInCiti = currentTrainings.some(t =>
+      t.registeredEmail && isHomeEmail(t.registeredEmail, inst)
     );
     const citiEmail = currentTrainings[0]?.registeredEmail;
 
-    if (citiEmail && !hasKsuEmailInCiti) {
+    if (citiEmail && !hasHomeEmailInCiti) {
       deficiencies.push({
         type: 'email_mismatch_suspected',
-        description: `${person.name}'s CITI training is registered under ${citiEmail}, but their Cayuse account uses ${person.email}. CITI training must be registered with a KSU email.`,
-        recommendation: `${person.name} should log into CITI and change their email to their KSU email (${person.email}), then merge any duplicate CITI accounts. Do NOT change the Cayuse email.`,
+        description: `${person.name}'s CITI training is registered under ${citiEmail}, but their Cayuse account uses ${person.email}. CITI training must be registered with a ${inst.name} email.`,
+        recommendation: `${person.name} should log into CITI and change their email to their ${inst.name} email (${person.email}), then merge any duplicate CITI accounts. Do NOT change the Cayuse email.`,
       });
       return { overallStatus: 'email_mismatch', trainings: trainingRecords, deficiencies };
     }
   }
 
   // Rule 3: External personnel without PDF
-  if (!isKsu) {
+  if (!isHome) {
     const matchedScraped = trainings.filter(t =>
       t.personnelName.toLowerCase().trim() === person.name.toLowerCase().trim()
     );
@@ -171,19 +158,26 @@ function evaluatePerson(
   return { overallStatus: 'compliant', trainings: trainingRecords, deficiencies: [] };
 }
 
-/** Evaluate compliance for all personnel in a submission */
+/**
+ * Evaluate compliance for all personnel in a submission.
+ *
+ * @param institution Resolved home institution (from settings override or
+ *   auto-detected from the Cayuse hostname). Defaults to an empty resolution,
+ *   which treats everyone as external — callers should pass a real value.
+ */
 export function evaluateSubmission(
   personnel: ScrapedPersonnel[],
-  trainings: ScrapedTraining[]
+  trainings: ScrapedTraining[],
+  institution: ResolvedInstitution = resolveInstitution(undefined)
 ): PersonnelRecord[] {
   return personnel.map(person => {
-    const isKsu = determineIsKsu(person);
-    const citiStatus = evaluatePerson(person, trainings, isKsu);
+    const isHome = isHomeInstitution(person, institution);
+    const citiStatus = evaluatePerson(person, trainings, isHome, institution);
 
     return {
       name: person.name,
       role: normalizeRole(person.role),
-      isKsuPersonnel: isKsu,
+      isHomeInstitution: isHome,
       email: person.email,
       citiStatus,
     };
