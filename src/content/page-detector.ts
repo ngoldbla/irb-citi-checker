@@ -46,10 +46,14 @@ export function detectCayusePage(url: string): CayusePageType {
   return 'unknown';
 }
 
-/** Check if a URL belongs to the KSU Cayuse IRB instance */
+/** Check if a URL belongs to any Cayuse instance (*.cayuse.com). */
 export function isCayuseUrl(url: string): boolean {
-  const lower = url.toLowerCase();
-  return lower.includes('kennesaw-irb.cayuse.com') || lower.includes('kennesaw.app.cayuse.com') || lower.includes('kennesaw-irb.app.cayuse.com');
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname === 'cayuse.com' || hostname.endsWith('.cayuse.com');
+  } catch {
+    return url.toLowerCase().includes('.cayuse.com');
+  }
 }
 
 /** Extract the section number from a submission form URL */
@@ -67,7 +71,8 @@ export function getSubmissionId(url: string): string | null {
 /** Check if the current form section is a personnel section (1.2 or 1.3) */
 export function isPersonnelSection(url: string): boolean {
   const section = getFormSectionNumber(url);
-  // Section 2 = 1.2 KSU Study Personnel, Section 3 = 1.3 Non-KSU Study Personnel
+  // In Cayuse's standard IRB form layout, section 2 lists home-institution study
+  // personnel (1.2) and section 3 lists external/non-institutional personnel (1.3).
   return section === 2 || section === 3;
 }
 

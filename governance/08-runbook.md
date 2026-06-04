@@ -1,8 +1,17 @@
 # Runbook
 
-**Last Reviewed:** 2026-03-04
+**Last Reviewed:** 2026-06-04
 
-Operational procedures for maintaining and troubleshooting the IRB CITI Compliance Checker extension.
+Operational procedures for maintaining and troubleshooting the IRB CITI Compliance
+Checker extension.
+
+This extension runs **fully offline**: it makes no network requests, uses no AI/LLM
+or external services, and stores all data only in `chrome.storage.local`. PI
+notifications are produced by a **deterministic, editable local template** with
+mail-merge fields. Procedures below reflect that architecture.
+
+For a concrete, worked adoption walkthrough (install, optional Settings override,
+template customization), see [`docs/DEPLOYMENT_EXAMPLE.md`](../docs/DEPLOYMENT_EXAMPLE.md).
 
 ---
 
@@ -47,9 +56,12 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
 
 6. Verify:
    - Extension icon appears in the Chrome toolbar
-   - Navigate to a Cayuse submission page
+   - Navigate to a Cayuse submission page (any `*.cayuse.com` tenant)
    - Click the extension icon to open the side panel
    - Click "Scan Personnel" and confirm results appear
+
+> For distribution options (release zip vs. Chrome Web Store) and the fact that the
+> same base build works at any institution, see `docs/DEPLOYMENT_EXAMPLE.md` § 1.
 
 ---
 
@@ -83,6 +95,10 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
    - Whether the issue is reproducible or intermittent
    - Consider increasing `MODAL_TIMEOUT` in the source code
 
+> **Note:** These diagnostics are vendor-generic. Cayuse renders the same form
+> structure across tenants, so a selector break typically affects every institution
+> at once — reproduce on any `*.cayuse.com` submission, not a specific subdomain.
+
 ---
 
 ## Procedure 3: Update DOM Selectors After Cayuse UI Change
@@ -92,6 +108,7 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
 ### Steps
 
 1. **Document** which selectors are broken and what the new DOM structure looks like.
+   Capture the DOM from a real Cayuse submission on any tenant.
 
 2. **Update selectors** in `src/content/selectors.ts`:
    ```typescript
@@ -104,7 +121,8 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
    dataCell: 'td.data-cell, td.e3-table-row-cell',
    ```
 
-4. If fallback chains in `cayuse-scraper.ts` need updating (e.g., `findViewButton()`, `findTrainingTable()`), update those arrays.
+4. If fallback chains in `cayuse-scraper.ts` need updating (e.g., `findViewButton()`,
+   `findTrainingTable()`), update those arrays.
 
 5. Add a comment with the date and what changed:
    ```typescript
@@ -118,42 +136,113 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
 
 7. Reload the extension in Chrome and test against a live Cayuse submission.
 
-8. Update the "Last Reviewed" date and DOM selectors table in `governance/01-architecture.md` Section 2.2.
+8. Update the "Last Reviewed" date and DOM selectors table in
+   `governance/01-architecture.md` Section 2.2.
 
 9. Follow the change management process in `governance/07-change-management.md`.
 
 ---
 
-## Procedure 4: Rotate or Update Portkey API Key
+## Procedure 4: Customize or Reset the PI Notification Template
 
-**Trigger:** API key compromised, expired, or needs rotation.
+**Trigger:** Staff want to change the wording, structure, or sign-off of the
+auto-generated PI notification, or restore the built-in default.
 
-### Steps
+Notifications are rendered locally by `src/lib/notification-renderer.ts` from a
+plain-text template. No model is involved. The template supports the following
+mail-merge fields, each written as `{{field}}`:
 
-1. Generate a new API key in the Portkey dashboard (or your configured LLM provider)
+`{{piName}}` · `{{protocolNumber}}` · `{{submissionTitle}}` · `{{institutionName}}` ·
+`{{date}}` · `{{deficiencies}}`
 
-2. In the extension side panel, click the **gear icon** (Settings)
+The `{{deficiencies}}` field expands to one block per flagged person, assembled from
+the evaluator's structured `description` and `recommendation` output. Unknown
+placeholders are left intact rather than blanked, so a typo is visible in the output.
 
-3. Update the **"Portkey API Key"** field with the new key
+### Customize the template (per-machine, via Settings)
 
-4. Click **"Save"**
+1. Open the extension side panel and click the **gear icon** (Settings).
 
-5. Test by clicking "Generate Notification" on any submission with deficiencies
+2. Edit the **"Notification template"** text area. Use any of the merge fields above.
 
-6. Verify the notification draft is generated successfully
+3. Click **"Save"**. The template is stored in `chrome.storage.local` under the
+   `settings.notificationTemplate` key and applies to all future notifications on
+   that machine.
 
-7. **Revoke the old API key** in the Portkey dashboard
+4. Test by opening a submission with deficiencies and confirming the rendered draft
+   reflects your wording with the merge fields populated correctly.
 
-### If API key is suspected compromised:
+> A blank template field means "use the built-in default" — saving an empty value
+> resets behavior to the default without needing the reset button.
 
-1. Immediately revoke the old key in the Portkey dashboard
-2. Check Portkey usage logs for unauthorized API calls
-3. Generate and install a new key (steps 1-6 above)
-4. Document the incident
+### Reset the template to the built-in default
+
+1. Open Settings (gear icon).
+
+2. Click **"Reset to default"** under the template field. This repopulates the field
+   with `DEFAULT_NOTIFICATION_TEMPLATE` from `src/lib/notification-renderer.ts`.
+
+3. Click **"Save"**.
+
+### Change the built-in default for all users (code change)
+
+1. Edit `DEFAULT_NOTIFICATION_TEMPLATE` in `src/lib/notification-renderer.ts`.
+
+2. If you add or remove merge fields, also update the `TEMPLATE_FIELDS` array in the
+   same file and the field documentation in `docs/DEPLOYMENT_EXAMPLE.md` § 2.
+
+3. Rebuild (`npm run build`), reload the extension, and verify the rendered draft.
+
+4. Follow the change management process in `governance/07-change-management.md`.
+
+> Staff copy the rendered text and paste it into Cayuse's "Missing information or
+> materials" field (or any correspondence) themselves. The extension does not click
+> through Cayuse's UI — see the documented stub in `src/content/cayuse-navigator.ts`.
 
 ---
 
-## Procedure 5: Clear Extension Data
+## Procedure 5: Configure the Institution Override
+
+**Trigger:** Auto-detection of the home institution is wrong or imprecise — e.g.
+personnel are mis-classified as internal/external, or the `{{institutionName}}` field
+in notifications reads as a bare subdomain token instead of the proper name.
+
+By default the extension **auto-detects** the home institution from the Cayuse
+subdomain (logic in `src/lib/institution.ts`). An optional manual override in
+Settings makes classification exact and the display name correct.
+
+### Steps
+
+1. Open the extension side panel and click the **gear icon** (Settings).
+
+2. Set **"Institution name"** to the display name you want in notifications
+   (e.g. `Example University`). Leaving it blank keeps auto-detection.
+
+3. Set **"Home email domains"** to a comma-separated list of the domains that
+   identify internal personnel (e.g. `example.edu, students.example.edu`). Leaving it
+   blank keeps subdomain-token matching.
+
+4. Click **"Save"**. Values persist in `chrome.storage.local` under
+   `settings.institutionName` and `settings.institutionEmailDomains`.
+
+5. Re-run "Scan Personnel" on a known submission and confirm:
+   - Internal vs. external classification is now correct.
+   - The `{{institutionName}}` field renders the configured name.
+
+### When the override is needed
+
+- The Cayuse subdomain does not clearly contain your institution's short name.
+- Personnel use multiple email domains, or a domain that does not contain the
+  subdomain token.
+- You want notifications to spell out the full institution name.
+
+When home email domains are configured, exact domain matching takes precedence over
+the looser subdomain-token substring match. For a worked example of both
+auto-detection and override, see `docs/DEPLOYMENT_EXAMPLE.md` § 2.
+
+---
+
+## Procedure 6: Clear Extension Data
 
 **Trigger:** Need to clear stored PII, reset extension state, or free storage space.
 
@@ -173,7 +262,7 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
 4. Delete specific keys:
    - `currentSubmission` - clears current scan results
    - `submissionHistory` - clears all historical scans
-   - `settings` - clears API key and configuration
+   - `settings` - clears the institution override and notification template
 
 ### Option C: Full Reset
 
@@ -181,13 +270,20 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
 2. Click **"Remove"** on the extension
 3. Reinstall from `dist/` directory
 
-**Note:** All options clear the Portkey API key. The user will need to reconfigure settings afterward.
+**Note:** Options A and C clear the saved `settings` (institution override and custom
+notification template). After a full reset, staff will need to re-enter any override
+or custom template; otherwise the extension falls back to auto-detection and the
+built-in default template.
 
 ---
 
-## Procedure 6: Investigate LLM Notification Failure
+## Procedure 7: Diagnose a Notification Rendering Issue
 
-**Trigger:** "Generate Notification" button fails with an error message.
+**Trigger:** A generated PI notification is empty, missing a person, or shows raw
+`{{placeholder}}` text instead of merged values.
+
+Notification rendering is deterministic and local — there is no service to call and
+no error to retry. A wrong output is a data or template issue, not an outage.
 
 ### Steps
 
@@ -196,36 +292,34 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
    - Find "IRB CITI Compliance Checker"
    - Click **"Inspect views: service worker"**
 
-2. Check the console for error messages from `chatCompletion()`
+2. Diagnose by symptom:
 
-3. Diagnose by error message:
-
-   | Error | Cause | Fix |
+   | Symptom | Likely Cause | Fix |
    |---|---|---|
-   | `Portkey API key and base URL must be configured` | Settings not saved | Open Settings, enter API key and base URL, save |
-   | `LLM API error (401)` | Invalid or expired API key | Rotate API key (Procedure 4) |
-   | `LLM API error (403)` | Forbidden - key lacks permissions | Check Portkey API key permissions |
-   | `LLM API error (429)` | Rate limited by Portkey/OpenAI | Wait and retry; consider increasing quota |
-   | `LLM API error (500/502/503)` | Portkey/OpenAI service outage | Check Portkey status page; retry later |
-   | `LLM returned empty response` | Model returned no content | Unusual; try again or check model availability |
-   | `Failed to fetch` | Network error | Check URL in settings; check firewall/VPN; verify HTTPS |
+   | A `{{placeholder}}` appears literally in the output | Typo or unsupported field name in the saved template | Edit the template to use a supported field; valid fields are listed in Procedure 4 |
+   | "No outstanding CITI compliance items." appears | No flagged personnel matched the render target | Confirm the scan actually found deficiencies (Procedure 2); re-scan |
+   | A flagged person is missing from the draft | Person was not classified as deficient, or a target-personnel filter excluded them | Re-check classification and the institution override (Procedure 5) |
+   | `{{institutionName}}` shows a bare token (e.g. "example") | Auto-detected name, no override set | Set the institution override (Procedure 5) |
+   | Draft uses old wording after editing the template | Settings not saved, or wrong machine | Re-open Settings, confirm the template text, click Save |
 
-4. If the error is a network issue:
-   - Verify the Portkey base URL is correct (e.g., `https://api.portkey.ai/v1`)
-   - Check if VPN or firewall is blocking the request
-   - Try the URL directly with `curl` to isolate browser vs. network issues
+3. If the output is structurally correct but the wording needs to change, use
+   **Procedure 4** to customize or reset the template.
+
+4. If the rendered date is wrong, note that `{{date}}` reflects the scan timestamp
+   (`scannedAt`) when present, otherwise today's date — re-scan to refresh it.
 
 ---
 
-## Procedure 7: Handle New Compliance Rule Request
+## Procedure 8: Handle New Compliance Rule Request
 
-**Trigger:** IRB Office requests a new compliance rule or modification to existing rules.
+**Trigger:** The IRB Office requests a new compliance rule or modification to existing
+rules.
 
 ### Steps
 
 1. **Document the rule** with the IRB Office:
    - Rule description in plain language
-   - When it applies (KSU only? External only? All personnel?)
+   - When it applies (home institution only? external only? all personnel?)
    - What compliance status it produces
    - What the deficiency message and recommendation should say
    - Priority relative to existing rules
@@ -245,23 +339,30 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
    | `src/lib/citi-evaluator.ts` | Add rule logic in `evaluatePerson()` |
    | `src/sidepanel/components/status-badge.ts` | Add label in `STATUS_LABELS` (if new status) |
    | `src/sidepanel/components/deficiency-report.ts` | Add entry in `TYPE_LABELS` and `TYPE_COLORS` (if new deficiency type) |
-   | `src/lib/notification-templates.ts` | Update if new rule needs special LLM prompt handling |
+   | `src/lib/notification-renderer.ts` | Update only if the new rule needs a new merge field or default-template wording |
 
 4. **Update governance docs:**
    - Update `governance/01-architecture.md` Section 5 (compliance rules table)
    - Update risk register if the rule introduces new risks
 
-5. **Follow change management** process in `governance/07-change-management.md` Section 2.2.
+5. **Follow change management** process in `governance/07-change-management.md`
+   Section 2.2.
+
+> **Dormant rules:** `external_institution_no_pdf` and `email_mismatch` in
+> `citi-evaluator.ts` are intentionally retained for future data sources (external
+> PDF attachment detection and registered-email comparison). Do not remove them when
+> adding new rules.
 
 ---
 
-## Procedure 8: Verify Extension Health After Chrome Update
+## Procedure 9: Verify Extension Health After Chrome Update
 
 **Trigger:** Chrome browser auto-updates to a new major version.
 
 ### Steps
 
-1. Check `chrome://extensions` for any error badges (red warning icons) on the extension
+1. Check `chrome://extensions` for any error badges (red warning icons) on the
+   extension
 
 2. If errors appear:
    - Click "Details" to see the error message
@@ -272,9 +373,11 @@ Operational procedures for maintaining and troubleshooting the IRB CITI Complian
    - Navigate to a Cayuse submission page
    - Click the extension icon - side panel should open
    - Click "Scan Personnel" - results should appear
+   - Open a submission with deficiencies and confirm the notification draft renders
    - Open DevTools console, filter by `[IRB Checker]` - no unexpected errors
 
-4. If issues are found, check Chrome release notes for Manifest v3 changes that may affect:
+4. If issues are found, check Chrome release notes for Manifest v3 changes that may
+   affect:
    - Service worker lifecycle (termination behavior, startup timing)
    - `chrome.storage` API (quota changes, behavior changes)
    - `chrome.sidePanel` API (behavior changes, deprecations)

@@ -33,7 +33,8 @@ export interface CitiStatus {
 export interface PersonnelRecord {
   name: string;
   role: 'PI' | 'Co-PI' | 'Faculty Advisor' | 'Other Personnel';
-  isKsuPersonnel: boolean;
+  /** True when this person belongs to the home institution (vs. an external collaborator). */
+  isHomeInstitution: boolean;
   email?: string;
   citiStatus: CitiStatus;
 }
@@ -44,6 +45,8 @@ export interface Submission {
   title: string;
   protocolNumber?: string;
   scannedAt: string; // ISO timestamp
+  /** Resolved home-institution display name at scan time (auto-detected or configured). */
+  institutionName?: string;
   personnel: PersonnelRecord[];
   overallCompliant: boolean;
 }
@@ -56,11 +59,20 @@ export interface SubmissionScan {
   overallCompliant: boolean;
 }
 
-/** Extension settings stored in chrome.storage */
+/**
+ * Extension settings stored in chrome.storage.local.
+ *
+ * All fields are optional in effect: when left blank, the extension auto-detects
+ * the institution from the Cayuse web address and uses the built-in notification
+ * template. No API keys or external services are involved — everything runs locally.
+ */
 export interface ExtensionSettings {
-  portkeyApiKey: string;
-  portkeyBaseUrl: string;
-  llmModel: string;
+  /** Manual override for the home-institution display name. Blank = auto-detect. */
+  institutionName: string;
+  /** Manual override for home email domains (e.g. ["example.edu"]). Blank = auto-detect. */
+  institutionEmailDomains: string[];
+  /** User-editable PI notification template with merge fields. Blank = built-in default. */
+  notificationTemplate: string;
 }
 
 /** Badge color mapping for status display */

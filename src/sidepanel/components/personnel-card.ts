@@ -31,7 +31,7 @@ export function renderPersonnelCard(person: PersonnelRecord): string {
       <div class="personnel-card-header">
         <div>
           <span class="personnel-name">${escapeHtml(person.name)}</span>
-          <span class="personnel-role"> — ${person.role}${person.isKsuPersonnel ? '' : ' (External)'}</span>
+          <span class="personnel-role"> — ${person.role}${person.isHomeInstitution ? '' : ' (External)'}</span>
         </div>
         ${renderStatusBadge(person.citiStatus.overallStatus)}
       </div>

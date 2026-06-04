@@ -1,17 +1,41 @@
 {
   "name": "irb-citi-checker",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Chrome extension to verify CITI Human Subjects training compliance for KSU IRB submissions in Cayuse",
+  "description": "Chrome extension to verify CITI Human Subjects training compliance for IRB submissions in Cayuse. Fully offline, no AI, institution-neutral.",
+  "license": "MIT",
+  "author": "Dylan Goldblatt and contributors",
+  "homepage": "https://github.com/ngoldbla/irb-in-chrome#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ngoldbla/irb-in-chrome.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ngoldbla/irb-in-chrome/issues"
+  },
+  "keywords": [
+    "chrome-extension",
+    "irb",
+    "citi",
+    "cayuse",
+    "compliance",
+    "human-subjects",
+    "research-administration"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
+    "prebuild": "node scripts/sync-version.mjs",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "npm run build && node scripts/package.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
     "typescript": "^5.7.0",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vitest": "^2.1.0"
   }
 }

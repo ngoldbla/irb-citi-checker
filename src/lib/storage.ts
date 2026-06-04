@@ -7,9 +7,9 @@ const KEYS = {
 } as const;
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
-  portkeyApiKey: '',
-  portkeyBaseUrl: '',
-  llmModel: 'gpt-5.2',
+  institutionName: '',
+  institutionEmailDomains: [],
+  notificationTemplate: '',
 };
 
 /** Save the current submission scan result */

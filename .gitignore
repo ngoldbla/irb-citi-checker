@@ -1,4 +1,8 @@
 node_modules/
 dist/
+releases/
+coverage/
 .context/
+.claude/scheduled_tasks.lock
 *.log
+.DS_Store

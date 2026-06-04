@@ -44,18 +44,30 @@
           <button id="btn-close-settings" class="icon-btn">✕</button>
         </div>
         <form id="settings-form">
-          <div class="form-group">
-            <label for="portkey-base-url">Portkey Base URL</label>
-            <input type="url" id="portkey-base-url" placeholder="https://api.portkey.ai/v1">
-          </div>
-          <div class="form-group">
-            <label for="portkey-api-key">Portkey API Key</label>
-            <input type="password" id="portkey-api-key" placeholder="pk-...">
-          </div>
-          <div class="form-group">
-            <label for="llm-model">Model</label>
-            <input type="text" id="llm-model" value="gpt-5.2" placeholder="gpt-5.2">
-          </div>
+          <p class="settings-note">Everything runs locally in your browser — no data is sent anywhere, and no AI or API key is required.</p>
+
+          <fieldset class="settings-fieldset">
+            <legend>Institution (optional)</legend>
+            <p class="settings-hint">Leave blank to auto-detect from your Cayuse web address.</p>
+            <div class="form-group">
+              <label for="institution-name">Institution name</label>
+              <input type="text" id="institution-name" placeholder="Auto-detected (e.g. Example University)">
+            </div>
+            <div class="form-group">
+              <label for="institution-domains">Home email domains</label>
+              <input type="text" id="institution-domains" placeholder="example.edu, students.example.edu">
+            </div>
+          </fieldset>
+
+          <fieldset class="settings-fieldset">
+            <legend>PI notification template</legend>
+            <p class="settings-hint">Merge fields: {{piName}} {{protocolNumber}} {{submissionTitle}} {{institutionName}} {{date}} {{deficiencies}}</p>
+            <div class="form-group">
+              <textarea id="notification-template" rows="12"></textarea>
+            </div>
+            <button type="button" id="btn-reset-template" class="btn btn-secondary btn-sm">Reset to default</button>
+          </fieldset>
+
           <button type="submit" class="btn btn-primary">Save</button>
         </form>
       </div>

@@ -1,11 +1,12 @@
 import type { ExtensionMessage } from '../types/messages';
 import type { Submission, ExtensionSettings } from '../types/models';
+import { DEFAULT_NOTIFICATION_TEMPLATE } from '../lib/notification-renderer';
 import { renderSubmissionHeader } from './components/submission-header';
 import { renderPersonnelList } from './components/personnel-list';
 import { renderDeficiencyReport } from './components/deficiency-report';
-import { renderNotificationDraft, renderDraftGenerating, renderNotificationPrompt, getCurrentDraftText } from './components/notification-draft';
+import { renderNotificationDraft, renderDraftGenerating, renderNotificationPrompt } from './components/notification-draft';
 import { renderScanProgress } from './components/scan-progress';
-import type { ScanProgressMessage, NavigateStatusMessage } from '../types/messages';
+import type { ScanProgressMessage } from '../types/messages';
 
 // ── DOM Elements ─────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function showSubmission(submission: Submission, autoGenerate = false): void {
     if (autoGenerate) {
       autoGenerateNotification(submission);
     } else {
-      // Show a CTA prompt instead of auto-firing the LLM
+      // Show a CTA prompt instead of auto-generating when restoring on panel reload
       renderNotificationPrompt(notificationDraft, () => {
         if (currentSubmission) autoGenerateNotification(currentSubmission);
       });
@@ -141,39 +142,9 @@ async function autoGenerateNotification(submission: Submission): Promise<void> {
 
 // Bind event listeners for buttons inside the draft component
 function bindDraftButtons(): void {
-  // Regenerate button
+  // Regenerate button — re-renders the message from the (possibly edited) template
   document.getElementById('btn-regenerate')?.addEventListener('click', () => {
     if (currentSubmission) autoGenerateNotification(currentSubmission);
-  });
-
-  // Return to PI button
-  document.getElementById('btn-return-to-pi')?.addEventListener('click', async () => {
-    if (!currentSubmission) return;
-    const comment = getCurrentDraftText();
-    if (!comment) {
-      showError('No draft text to send');
-      return;
-    }
-    try {
-      const response = await sendMessage({
-        type: 'RETURN_TO_PI',
-        submissionId: currentSubmission.id,
-        comment,
-      });
-      if (response.type === 'NAVIGATE_STATUS') {
-        if (response.success) {
-          showToast('Submission returned to PI');
-        } else {
-          showError(response.error ?? 'Return to PI failed');
-          // Fallback: offer clipboard copy
-          navigator.clipboard.writeText(comment).then(() => {
-            showToast('Draft copied to clipboard as fallback');
-          });
-        }
-      }
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Return to PI failed');
-    }
   });
 }
 
@@ -191,28 +162,36 @@ $('btn-close-settings').addEventListener('click', () => {
   settingsModal.classList.add('hidden');
 });
 
+// Reset the notification template to the built-in default
+$('btn-reset-template').addEventListener('click', () => {
+  ($<HTMLTextAreaElement>('notification-template')).value = DEFAULT_NOTIFICATION_TEMPLATE;
+});
+
 // Settings form
 $<HTMLFormElement>('settings-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const settings: ExtensionSettings = {
-    portkeyBaseUrl: ($<HTMLInputElement>('portkey-base-url')).value,
-    portkeyApiKey: ($<HTMLInputElement>('portkey-api-key')).value,
-    llmModel: ($<HTMLInputElement>('llm-model')).value || 'gpt-5.2',
+    institutionName: ($<HTMLInputElement>('institution-name')).value.trim(),
+    institutionEmailDomains: parseDomains(($<HTMLInputElement>('institution-domains')).value),
+    notificationTemplate: ($<HTMLTextAreaElement>('notification-template')).value,
   };
   await sendMessage({ type: 'SAVE_SETTINGS', settings });
   settingsModal.classList.add('hidden');
-
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = 'Settings saved';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  showToast('Settings saved');
 });
 
+function parseDomains(value: string): string[] {
+  return value
+    .split(/[,\s]+/)
+    .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+    .filter(Boolean);
+}
+
 function populateSettings(settings: ExtensionSettings): void {
-  ($<HTMLInputElement>('portkey-base-url')).value = settings.portkeyBaseUrl;
-  ($<HTMLInputElement>('portkey-api-key')).value = settings.portkeyApiKey;
-  ($<HTMLInputElement>('llm-model')).value = settings.llmModel;
+  ($<HTMLInputElement>('institution-name')).value = settings.institutionName ?? '';
+  ($<HTMLInputElement>('institution-domains')).value = (settings.institutionEmailDomains ?? []).join(', ');
+  ($<HTMLTextAreaElement>('notification-template')).value =
+    settings.notificationTemplate?.trim() ? settings.notificationTemplate : DEFAULT_NOTIFICATION_TEMPLATE;
 }
 
 // ── Broadcast Listeners ──────────────────────────────────
@@ -225,14 +204,6 @@ chrome.runtime.onMessage.addListener((message: { type: string } & Record<string,
     loadingText.classList.add('hidden');
     scanProgress.classList.remove('hidden');
     renderScanProgress(scanProgress, msg);
-  }
-  if (message.type === 'NAVIGATE_STATUS') {
-    const msg = message as unknown as NavigateStatusMessage;
-    if (msg.success) {
-      showToast('Submission returned to PI successfully');
-    } else {
-      showError(msg.error ?? 'Navigation failed');
-    }
   }
 });
 

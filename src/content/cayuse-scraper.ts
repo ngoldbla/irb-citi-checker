@@ -111,7 +111,8 @@ function isDataRow(row: Element): boolean {
 
 /**
  * Scrape personnel data from all assignment-type containers on the current page.
- * Works on section 1.2 (KSU) and section 1.3 (Non-KSU) of the submission form.
+ * Works on the home-institution (1.2) and external (1.3) study personnel sections
+ * of the Cayuse submission form.
  */
 function scrapePersonnel(): ScrapedPersonnel[] {
   const containers = document.querySelectorAll(SELECTORS.personnel.assignmentContainer);

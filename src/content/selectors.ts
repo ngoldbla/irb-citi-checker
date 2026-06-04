@@ -1,8 +1,10 @@
 /**
  * Centralized CSS selectors for Cayuse DOM scraping.
  *
- * Verified against live Cayuse IRB at kennesaw-irb.cayuse.com (March 2026).
- * Cayuse uses Semantic UI framework with custom e3-table components.
+ * Verified against a live Cayuse Human Ethics (IRB) instance.
+ * Cayuse uses the Semantic UI framework with custom e3-table components, so
+ * these selectors target Semantic UI / e3-table classes rather than semantic
+ * HTML tags (the app renders almost no <button> elements).
  */
 export const SELECTORS = {
   /** Submission form header elements */
