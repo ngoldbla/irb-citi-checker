@@ -11,7 +11,7 @@ at any institution that uses Cayuse, with no configuration required.
 
 ### Added
 - Institution-neutral support for **any** Cayuse instance via a single
-  `*://*.cayuse.com/*` host match — no per-site setup.
+  `https://*.cayuse.com/*` host match — no per-site setup.
 - Automatic home-institution detection from the Cayuse subdomain, with an
   optional manual override (institution name + home email domains) in Settings.
 - Editable PI-notification template with mail-merge fields

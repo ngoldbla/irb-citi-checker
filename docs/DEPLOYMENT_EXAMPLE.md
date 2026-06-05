@@ -15,7 +15,7 @@ looks like and use it as a template for your own.
 **Key fact up front:** the base extension needs **no code changes** to run at your
 institution. Cayuse is a single SaaS vendor, and every customer tenant lives under
 `*.cayuse.com`. The extension ships with one broad host permission
-(`*://*.cayuse.com/*`) and **auto-detects** your home institution from the Cayuse
+(`https://*.cayuse.com/*`) and **auto-detects** your home institution from the Cayuse
 subdomain. Everything below is configuration, policy mapping, and rollout — not
 forking or recompiling.
 
@@ -272,7 +272,7 @@ to your team.
 To be explicit, adopting at Example University — or any institution — required:
 
 - **Zero code changes.** Same MIT-licensed base build, same single
-  `*://*.cayuse.com/*` host permission.
+  `https://*.cayuse.com/*` host permission.
 - **No new network access.** The extension makes no requests of any kind; there is
   nothing to allowlist on your firewall.
 - **No vendor onboarding or API keys.** There is no AI/LLM, no external API, and no

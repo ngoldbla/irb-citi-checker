@@ -23,6 +23,9 @@
     "research-administration"
   ],
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite build --watch",
     "prebuild": "node scripts/sync-version.mjs",

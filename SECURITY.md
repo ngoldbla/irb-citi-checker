@@ -80,7 +80,7 @@ IRB CITI Checker is designed to be private and low-risk by default:
   - `storage` — persist scan results and settings in `chrome.storage.local`.
   - `activeTab` — read the active tab's URL to confirm you are on a Cayuse page.
   - `scripting` — inject the content script into Cayuse tabs as a fallback.
-  - Host permission `*://*.cayuse.com/*` — scoped to Cayuse tenants only; the
+  - Host permission `https://*.cayuse.com/*` — scoped to Cayuse tenants only; the
     extension cannot run on arbitrary websites.
 - **Local-only data storage.** All data is stored exclusively in
   `chrome.storage.local`, sandboxed to this extension by the browser, and is

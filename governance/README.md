@@ -8,7 +8,7 @@ This directory contains governance, compliance, security, and operational docume
 - **Governance/Compliance reviewers** evaluating data handling, privacy, and institutional policy alignment
 - **SRE/Developers** maintaining, extending, and operating the extension
 
-The extension is **institution-neutral** and **fully offline**: it makes zero network requests, contains no AI/LLM or external services, and stores data only in `chrome.storage.local`. It works at any institution through a single broad host permission (`*://*.cayuse.com/*`), auto-detecting the home institution from the Cayuse subdomain, with an optional manual override in Settings. These documents are therefore written generically — they say "consult your institution's policy" rather than naming a specific office, domain, or retention rule. For a single, end-to-end worked example of adopting the extension at one (fictional) institution, see [`../docs/DEPLOYMENT_EXAMPLE.md`](../docs/DEPLOYMENT_EXAMPLE.md).
+The extension is **institution-neutral** and **fully offline**: it makes zero network requests, contains no AI/LLM or external services, and stores data only in `chrome.storage.local`. It works at any institution through a single broad host permission (`https://*.cayuse.com/*`), auto-detecting the home institution from the Cayuse subdomain, with an optional manual override in Settings. These documents are therefore written generically — they say "consult your institution's policy" rather than naming a specific office, domain, or retention rule. For a single, end-to-end worked example of adopting the extension at one (fictional) institution, see [`../docs/DEPLOYMENT_EXAMPLE.md`](../docs/DEPLOYMENT_EXAMPLE.md).
 
 ## Documents
 

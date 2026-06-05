@@ -51,7 +51,7 @@
 ### 1.3 Data NOT Collected
 
 - Passwords, session tokens, or authentication credentials for Cayuse
-- Browser history or activity outside Cayuse pages (`*://*.cayuse.com/*`)
+- Browser history or activity outside Cayuse pages (`https://*.cayuse.com/*`)
 - Keystroke data, mouse movements, or interaction patterns
 - Contents of other browser tabs
 - Student academic records (the extension operates on researcher/personnel data)
@@ -129,7 +129,7 @@ The extension transmits **nothing** off the device. It performs no `fetch`,
 `XMLHttpRequest`, WebSocket, or any other network call. There is no AI/LLM, no
 external API, no telemetry, and no analytics. All compliance evaluation and
 notification rendering happen locally and synchronously in the browser. The only
-host permission requested is `*://*.cayuse.com/*`, which scopes where the content
+host permission requested is `https://*.cayuse.com/*`, which scopes where the content
 script may read the page DOM — it is not used to send data anywhere.
 
 > **History note (no longer current).** Earlier prototypes generated the PI

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 128 128">
+  <!-- Source of truth for the extension icon set (icon-16/48/128.png).
+       Theme: shield (compliance/protection) + check (verified training). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded-square badge -->
+  <rect x="12" y="12" width="104" height="104" rx="26" fill="url(#bg)"/>
+  <!-- white shield -->
+  <path d="M64 29 L93 40 V65 C93 85 79 96 64 101 C49 96 35 85 35 65 V40 Z"
+        fill="#ffffff" opacity="0.97"/>
+  <!-- check mark -->
+  <path d="M50 65 L60 76 L81 50" fill="none" stroke="#1d4ed8"
+        stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

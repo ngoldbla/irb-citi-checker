@@ -10,7 +10,7 @@ eliminated and are recorded below as **Resolved** rather than deleted, so the
 history of the mitigation is preserved.
 
 The extension is **institution-neutral**. It runs at any institution via a single
-broad host permission (`*://*.cayuse.com/*`) and auto-detects the home institution
+broad host permission (`https://*.cayuse.com/*`) and auto-detects the home institution
 from the Cayuse subdomain, with an optional manual override in Settings. For a
 worked example of configuring and deploying the extension at a specific
 institution, see [docs/DEPLOYMENT_EXAMPLE.md](../docs/DEPLOYMENT_EXAMPLE.md).
@@ -78,7 +78,7 @@ institution, see [docs/DEPLOYMENT_EXAMPLE.md](../docs/DEPLOYMENT_EXAMPLE.md).
 | Field | Value |
 |---|---|
 | **Category** | Security |
-| **Description** | The extension declares a single broad host permission, `*://*.cayuse.com/*`, so that it works at any institution's Cayuse tenant without code changes. This grants the content script access to every page under `*.cayuse.com`, which is wider than any single institution strictly requires. |
+| **Description** | The extension declares a single broad host permission, `https://*.cayuse.com/*`, so that it works at any institution's Cayuse tenant without code changes. This grants the content script access to every page under `*.cayuse.com`, which is wider than any single institution strictly requires. |
 | **Likelihood** | Low |
 | **Impact** | Medium (broader DOM-read surface than the minimum; no credential or external endpoint is exposed because none exist) |
 | **Severity** | **Low** |

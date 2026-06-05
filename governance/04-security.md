@@ -65,7 +65,7 @@ longer exists.
 
 | Pattern | Scope | Purpose |
 |---|---|---|
-| `*://*.cayuse.com/*` | Any Cayuse tenant | Content script injection + tab URL matching |
+| `https://*.cayuse.com/*` | Any Cayuse tenant | Content script injection + tab URL matching |
 
 **Why a single broad `*.cayuse.com` pattern?** Cayuse is a multi-tenant SaaS
 product: every customer institution is served from a subdomain of

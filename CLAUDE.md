@@ -13,7 +13,7 @@ the client. Data is stored only in `chrome.storage.local` and is never
 transmitted.
 
 **Works at any institution.** A single broad host permission
-(`*://*.cayuse.com/*`) covers every Cayuse tenant. The home institution is
+(`https://*.cayuse.com/*`) covers every Cayuse tenant. The home institution is
 auto-detected from the Cayuse subdomain, with an optional manual override
 (institution name + home email domains) in Settings. There are no hardcoded
 institution names or domains.
@@ -30,7 +30,7 @@ institution names or domains.
 
 - **Content script** (`src/content/cayuse-scraper.ts`): Scrapes personnel data
   and training records from the Cayuse DOM. Opens training modals sequentially.
-  Matches `*://*.cayuse.com/*`.
+  Matches `https://*.cayuse.com/*`.
 - **Service worker** (`src/background/service-worker.ts`): Message router,
   compliance evaluation, local notification rendering, storage. Validates that
   the active tab is a Cayuse host via a hostname-suffix check (`*.cayuse.com`).

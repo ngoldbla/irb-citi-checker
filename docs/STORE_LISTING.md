@@ -131,10 +131,10 @@ the user's device; no data is transmitted.
 | `storage` | Saves the user's settings (institution name, home email domains, notification template) and the most recent scan results using `chrome.storage.local`, so preferences persist between sessions. | None leaves the device. Data is written only to `chrome.storage.local` on the user's own machine and is never synced or transmitted. |
 | `activeTab` | Lets the extension act on the Cayuse tab the user is currently viewing when they open the side panel and click Scan, scoping access to that one user-initiated tab. | None. It grants temporary access to the current tab only in response to a user action; nothing is sent anywhere. |
 | `scripting` | Injects the content script that reads the personnel and CITI training records already rendered on the Cayuse page and opens/closes the training detail modals to read their contents. | None. The script reads page content already visible to the user and returns it to the local service worker; nothing is transmitted off-device. |
-| `host_permissions: *://*.cayuse.com/*` | Cayuse is a single SaaS vendor and every institutional tenant is served under a `*.cayuse.com` subdomain. This one broad host pattern lets the extension work at any institution's Cayuse instance without per-tenant configuration or hardcoded domains. | None. The host match only allows the content script to run on Cayuse pages; the extension makes zero outbound network requests, so no data is collected or transmitted. |
+| `host_permissions: https://*.cayuse.com/*` | Cayuse is a single SaaS vendor and every institutional tenant is served under a `*.cayuse.com` subdomain. This one broad host pattern lets the extension work at any institution's Cayuse instance without per-tenant configuration or hardcoded domains. | None. The host match only allows the content script to run on Cayuse pages; the extension makes zero outbound network requests, so no data is collected or transmitted. |
 
 **Broad host permission note (for the review form):** The single
-`*://*.cayuse.com/*` pattern is intentional and minimal — it is the narrowest
+`https://*.cayuse.com/*` pattern is intentional and minimal — it is the narrowest
 pattern that still works for every institution, because all Cayuse tenants live
 under `*.cayuse.com`. The extension does not request `<all_urls>` or any other
 host. The home institution is auto-detected from the Cayuse subdomain at runtime;
@@ -181,21 +181,16 @@ describe any remote/LLM behavior as current.
 The Chrome Web Store requires a privacy policy URL even when no data is collected.
 
 ```
-[TODO: paste the hosted privacy policy URL]
+https://github.com/ngoldbla/irb-in-chrome/blob/main/PRIVACY.md
 ```
 
-**Recommended sources (pick one and host before submitting):**
+This points to the committed `PRIVACY.md` rendered on GitHub.
 
-- Repo file rendered on GitHub:
-  `https://github.com/ngoldbla/irb-in-chrome/blob/main/PRIVACY.md`
-- GitHub Pages copy (if Pages is enabled):
-  `https://ngoldbla.github.io/irb-in-chrome/PRIVACY.html`
-
-> **Action item:** `PRIVACY.md` is referenced by the README but is not yet
-> committed at the repo root. Create and commit it (stating that no data is
-> collected or transmitted and that all data stays in `chrome.storage.local`)
-> before submitting, then paste its public URL above. The privacy policy URL
-> must resolve publicly at review time.
+> **Prerequisite:** `PRIVACY.md` is committed at the repo root, but the
+> repository must be **public** (on the `main` branch) for this URL to resolve
+> for the Chrome reviewer and for end users — a private-repo URL returns 404 and
+> will fail review. Confirm the repo is public before submitting. Alternative:
+> enable GitHub Pages for `https://ngoldbla.github.io/irb-in-chrome/`.
 
 ---
 
@@ -205,8 +200,8 @@ Store requires at least 1 screenshot (up to 5). Recommended: 1280×800 or 640×4
 PNG/JPEG. Capture on a Cayuse submission page (sanitize/redact any real personnel
 PII — use a test or fictitious submission).
 
-- [ ] **Store icon — 128×128 PNG.** Already in repo at
-      `dist/assets/icon-128.png` (also `icon-16.png`, `icon-48.png`).
+- [x] **Store icon — 128×128 PNG.** In repo at `src/assets/icon-128.png` (also
+      `icon-16.png`, `icon-48.png`); copied to `dist/assets/` on build.
 - [ ] **Screenshot 1 — Side panel with scan results** showing per-person
       compliance status (compliant + deficient examples). Redact real names/emails.
 - [ ] **Screenshot 2 — A drafted PI notification** rendered from the template,
@@ -261,9 +256,10 @@ PII — use a test or fictitious submission).
 - [ ] `manifest.json` `version` matches `package.json` `version` (kept in sync by
       `scripts/sync-version.mjs` on build).
 - [ ] Package zip generated via `npm run package`.
-- [ ] Permissions in `manifest.json` match the justifications in §5 (currently
-      `sidePanel`, `storage`, `activeTab`, `scripting`, host `*://*.cayuse.com/*`).
-- [ ] `PRIVACY.md` committed and a public URL resolves (§7).
+- [x] Permissions in `manifest.json` match the justifications in §5 (currently
+      `sidePanel`, `storage`, `activeTab`, `scripting`, host `https://*.cayuse.com/*`).
+- [x] `PRIVACY.md` committed at repo root (public URL resolves once the repo is
+      made public — see §7).
 - [ ] Screenshots captured with redacted/fictitious data (§8).
 - [ ] Single purpose statement and data-safety answers reflect the **offline,
       no-data-transmitted** architecture (no mention of AI/LLM/remote services as

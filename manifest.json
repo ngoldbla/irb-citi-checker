@@ -10,7 +10,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "*://*.cayuse.com/*"
+    "https://*.cayuse.com/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
@@ -22,7 +22,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.cayuse.com/*"
+        "https://*.cayuse.com/*"
       ],
       "js": ["content-script.js"],
       "run_at": "document_idle"

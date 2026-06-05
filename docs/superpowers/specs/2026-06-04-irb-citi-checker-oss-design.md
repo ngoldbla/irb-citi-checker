@@ -18,7 +18,7 @@ strongest asset for both the privacy story and the Chrome Web Store review.
 
 - **Distribution:** Chrome Web Store primary, GitHub Releases zip as the
   free/fallback path. Repo prepares everything store-ready; publishing is manual.
-- **Institution-neutral domains:** a single broad host match `*://*.cayuse.com/*`.
+- **Institution-neutral domains:** a single broad host match `https://*.cayuse.com/*`.
   Cayuse is one SaaS vendor, so every institution's tenant lives under
   `*.cayuse.com`; a hostname-suffix check needs no per-site configuration.
 - **Notifications:** keep the feature, but render it deterministically from an

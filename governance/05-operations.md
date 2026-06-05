@@ -6,7 +6,7 @@ This document covers building, releasing, and maintaining the extension. The
 extension is **fully offline**: it makes zero network requests, contains no
 AI/LLM or external services, and stores all data only in `chrome.storage.local`.
 It is also **institution-neutral** — it works at any institution served by
-Cayuse via a single broad host permission (`*://*.cayuse.com/*`), with the home
+Cayuse via a single broad host permission (`https://*.cayuse.com/*`), with the home
 institution auto-detected from the Cayuse subdomain and an optional manual
 override in Settings.
 

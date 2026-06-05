@@ -167,7 +167,7 @@ reproducible and reviewable.
   for installation.
 - **Recommended action:** Submit the extension for IT review if deploying on
   managed devices. The zero-network design (single host permission
-  `*://*.cayuse.com/*`, no outbound traffic) typically simplifies that review.
+  `https://*.cayuse.com/*`, no outbound traffic) typically simplifies that review.
 
 ### 4.2 IRB Office Data-Handling Procedures
 

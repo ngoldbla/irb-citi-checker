@@ -87,7 +87,7 @@ requires:
 - [ ] Security reviewer approval
 
 The extension currently requests only `sidePanel`, `storage`, `activeTab`,
-`scripting`, and the single host permission `*://*.cayuse.com/*`. Broadening this
+`scripting`, and the single host permission `https://*.cayuse.com/*`. Broadening this
 set — especially the host permission — is a significant change and should be
 discussed in an issue first.
 

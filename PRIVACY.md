@@ -83,7 +83,7 @@ The extension requests the minimum permissions needed to do its single job:
 | `storage` | To save your scan results and settings locally, in your browser (`chrome.storage.local`). |
 | `activeTab` | To work with the Cayuse tab you are actively viewing when you start a scan. |
 | `scripting` | To run the page-reading logic on the Cayuse submission page so it can collect the visible personnel and training records. |
-| Host access: `*://*.cayuse.com/*` | So the extension can read submission pages on Cayuse. Cayuse is a single hosted vendor and every institution's instance lives under `*.cayuse.com`, so this scope lets the extension work at any institution while still being limited to Cayuse and nowhere else. |
+| Host access: `https://*.cayuse.com/*` | So the extension can read submission pages on Cayuse. Cayuse is a single hosted vendor and every institution's instance lives under `*.cayuse.com`, so this scope lets the extension work at any institution while still being limited to Cayuse and nowhere else. |
 
 The extension cannot read or act on any website outside of `*.cayuse.com`.
 

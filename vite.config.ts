@@ -22,7 +22,10 @@ export default defineConfig({
     },
     target: 'esnext',
     minify: false,
-    sourcemap: true,
+    // No source maps in the shipped artifact: keeps the Web Store zip small and
+    // avoids publishing original TypeScript source paths. Code stays unminified,
+    // so it remains review-friendly without maps.
+    sourcemap: false,
   },
   resolve: {
     alias: {
@@ -41,7 +44,9 @@ export default defineConfig({
           cpSync(
             resolve(__dirname, 'src/assets'),
             resolve(__dirname, 'dist/assets'),
-            { recursive: true }
+            // Ship only the rasterized PNG icons; the icon.svg is design source
+            // (referenced by no manifest field) and should not be packaged.
+            { recursive: true, filter: (src) => !src.toLowerCase().endsWith('.svg') }
           );
         } catch {
           // Assets may not exist yet

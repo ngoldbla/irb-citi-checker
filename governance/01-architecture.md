@@ -102,7 +102,7 @@ notification text from a template.
 ### 2.2 Content Script (`src/content/cayuse-scraper.ts`, `page-detector.ts`, `selectors.ts`, `cayuse-navigator.ts`)
 
 Injected on Cayuse pages only (declared in `manifest.json` `content_scripts`
-matching `*://*.cayuse.com/*`, and re-injected as a fallback via
+matching `https://*.cayuse.com/*`, and re-injected as a fallback via
 `chrome.scripting.executeScript()`). Runs at `document_idle`.
 
 **Responsibilities:**
@@ -360,7 +360,7 @@ RULES block in `citi-evaluator.ts` for details.
 
 - All data (current submission, scan history, settings) lives only in
   `chrome.storage.local` and is never transmitted.
-- The extension holds a single broad host permission, `*://*.cayuse.com/*`,
+- The extension holds a single broad host permission, `https://*.cayuse.com/*`,
   plus `sidePanel`, `storage`, `activeTab`, and `scripting`. It can read only
   Cayuse pages and only while the user is using it.
 - No analytics, telemetry, or third-party requests are made.

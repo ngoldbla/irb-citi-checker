@@ -24,7 +24,7 @@ mind before you start:
   processing happens locally in the browser, and data is kept only in
   `chrome.storage.local`.
 - **It is institution-neutral.** The extension works at any Cayuse tenant via
-  the single host permission `*://*.cayuse.com/*`. The home institution is
+  the single host permission `https://*.cayuse.com/*`. The home institution is
   auto-detected from the Cayuse subdomain, with an optional manual override in
   Settings. Please don't hardcode institution names, domains, or other
   site-specific assumptions.
