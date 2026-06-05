@@ -70,8 +70,7 @@ with clear, specific guidance.
 - Instant, deterministic notifications. Deficiency messages are produced from an
   editable template, not a language model, so the output is consistent and
   reviewable.
-- No accounts, no setup. Nothing to sign up for and no API keys to configure —
-  just install and scan.
+- Open source (MIT). Fork it, audit it, adapt it to your office's workflow.
 
 FEATURES
 - One-click compliance scan of all listed study personnel on a Cayuse submission

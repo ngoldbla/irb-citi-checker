@@ -17,7 +17,7 @@ interactive submission steps (account setup + dashboard) using Claude in Chrome.
 | Distribution / visibility | **Public** — listed & searchable (matches MIT, institution-neutral design) |
 | Developer account status | Not yet registered — maintainer pays $5 + enables 2-Step Verification (Claude guides, does not perform) |
 | Privacy policy hosting | **Public GitHub Gist** (repo stays private) → `https://gist.github.com/ngoldbla/799588d7e10c64dd0e42e84050234523` (verified HTTP 200 logged-out, 2026-06-04) |
-| Source repo visibility | **Stays private** — so open-source / "fork it, audit it" claims and repo links are softened in the listing, README, and privacy policy |
+| Source repo visibility | **Public** (decision reversed after submission — maintainer chose to open-source) → open-source / "fork it, audit it" claims restored in README + listing worksheet. Git identity set to `ngoldbla <ngoldbla@kennesaw.edu>`; LICENSE/`package.json` attribute Dylan Goldblatt. |
 | Screenshots | Seed synthetic (fictional) data into `chrome.storage.local`, capture side-panel UI states — no real PII |
 
 ## Readiness baseline (from parallel assessment)
