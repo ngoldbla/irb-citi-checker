@@ -118,18 +118,14 @@ directed to children and collects no data from them.
 ## Changes to this notice
 
 If the extension's data practices change, this notice will be updated and the
-effective date above will be revised. Because the project is open source, the full
-history of changes to this notice is visible in the repository.
+effective date above will be revised.
 
 ## Contact
 
-Questions about this notice or the extension's privacy practices can be raised via
-the project's issue tracker on GitHub:
-<https://github.com/ngoldbla/irb-in-chrome>.
+Questions about this notice or the extension's privacy practices can be directed
+to the developer contact listed on the extension's Chrome Web Store page.
 
 ---
 
-*IRB CITI Checker is open-source software released under the MIT License by Dylan
-Goldblatt and contributors. It is not affiliated with, endorsed by, or sponsored
-by Cayuse LLC or the CITI Program; those names are referenced only to describe
-compatibility.*
+*IRB CITI Checker is not affiliated with, endorsed by, or sponsored by Cayuse LLC
+or the CITI Program; those names are referenced only to describe compatibility.*

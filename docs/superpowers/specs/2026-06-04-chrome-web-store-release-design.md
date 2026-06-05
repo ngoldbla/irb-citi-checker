@@ -16,7 +16,8 @@ interactive submission steps (account setup + dashboard) using Claude in Chrome.
 |---|---|
 | Distribution / visibility | **Public** — listed & searchable (matches MIT, institution-neutral design) |
 | Developer account status | Not yet registered — maintainer pays $5 + enables 2-Step Verification (Claude guides, does not perform) |
-| Privacy policy hosting | GitHub-rendered `PRIVACY.md` → `https://github.com/ngoldbla/irb-in-chrome/blob/main/PRIVACY.md` **(requires repo to be made public + PRIVACY.md on `main`)** |
+| Privacy policy hosting | **Public GitHub Gist** (repo stays private) → `https://gist.github.com/ngoldbla/799588d7e10c64dd0e42e84050234523` (verified HTTP 200 logged-out, 2026-06-04) |
+| Source repo visibility | **Stays private** — so open-source / "fork it, audit it" claims and repo links are softened in the listing, README, and privacy policy |
 | Screenshots | Seed synthetic (fictional) data into `chrome.storage.local`, capture side-panel UI states — no real PII |
 
 ## Readiness baseline (from parallel assessment)
@@ -57,9 +58,10 @@ icons present, build/typecheck/tests green.
    ① deficiency results ② PI notification draft ③ all-compliant ④ Settings
    ⑤ scan-in-progress.
 
-### Phase D — Privacy policy URL
-Make repo public (maintainer-authorized), ensure `PRIVACY.md` on `main`, verify
-the blob URL resolves 200 logged-out.
+### Phase D — Privacy policy URL ✅
+Source repo stays private. Privacy policy published as a public Gist
+(`gist.github.com/ngoldbla/799588d7e10c64dd0e42e84050234523`), verified HTTP 200
+logged-out. Open-source claims softened across listing/README/privacy.
 
 ### Phase E — Developer account (maintainer drives, Claude guides)
 Register at the Developer Console, pay one-time **$5**, enable **2-Step

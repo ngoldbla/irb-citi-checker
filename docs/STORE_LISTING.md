@@ -70,7 +70,8 @@ with clear, specific guidance.
 - Instant, deterministic notifications. Deficiency messages are produced from an
   editable template, not a language model, so the output is consistent and
   reviewable.
-- Open source (MIT). Fork it, audit it, adapt it to your office's workflow.
+- No accounts, no setup. Nothing to sign up for and no API keys to configure —
+  just install and scan.
 
 FEATURES
 - One-click compliance scan of all listed study personnel on a Cayuse submission
@@ -181,16 +182,13 @@ describe any remote/LLM behavior as current.
 The Chrome Web Store requires a privacy policy URL even when no data is collected.
 
 ```
-https://github.com/ngoldbla/irb-in-chrome/blob/main/PRIVACY.md
+https://gist.github.com/ngoldbla/799588d7e10c64dd0e42e84050234523
 ```
 
-This points to the committed `PRIVACY.md` rendered on GitHub.
-
-> **Prerequisite:** `PRIVACY.md` is committed at the repo root, but the
-> repository must be **public** (on the `main` branch) for this URL to resolve
-> for the Chrome reviewer and for end users — a private-repo URL returns 404 and
-> will fail review. Confirm the repo is public before submitting. Alternative:
-> enable GitHub Pages for `https://ngoldbla.github.io/irb-in-chrome/`.
+The privacy policy is hosted as a **public GitHub Gist** so the source repository
+can remain private. Verified publicly resolvable (HTTP 200, logged-out) on
+2026-06-04. The Gist content is the softened `PRIVACY.md` (no open-source / repo
+references; contact points to the Web Store developer contact).
 
 ---
 
