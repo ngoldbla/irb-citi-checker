@@ -70,9 +70,10 @@ prefers managed deployment, your Chrome Enterprise admins can **force-install** 
 Web Store extension by ID through Google Admin console policy, so analysts get it
 automatically with no manual steps.
 
-> The public Web Store listing is in preparation. Until it is published, use
-> Option A. When it is available, a one-click install link will appear in the
-> project README.
+> The extension is **live on the Chrome Web Store**:
+> <https://chromewebstore.google.com/detail/irb-citi-checker/mgmnpadkgobopfjnfphainieplbgndlm>.
+> For managed deployment, force-install by extension ID
+> `mgmnpadkgobopfjnfphainieplbgndlm` via Google Admin console policy.
 
 Either way, the extension is the **same base build for every institution** — there
 is no "Example University edition."
