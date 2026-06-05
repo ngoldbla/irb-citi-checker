@@ -49,8 +49,9 @@ with clear, specific guidance.
 
 ### Option A — Chrome Web Store
 
-> Web Store listing is in preparation. Once published, a one-click install link
-> will appear here.
+> The Web Store listing has been **submitted and is in review**. Once approved, a
+> one-click install link will appear here. Until then, install from a release
+> build (Option B) below.
 
 ### Option B — From a release build (no developer tools needed)
 
